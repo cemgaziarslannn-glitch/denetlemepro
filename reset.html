@@ -170,7 +170,7 @@ function reset(){
   .confirmPasswordReset(oobCode, pass1.value)
   .then(()=>{
    showToast("Şifre başarıyla güncellendi","success");
-   setTimeout(()=>location.href="login.html",1500);
+   setTimeout(()=>location.href="index.html",1500);
   })
   .catch(()=>{
    showToast("Link süresi dolmuş veya geçersiz","error");
