@@ -52,7 +52,21 @@ body{
 }
 .item-title{font-weight:600;font-size:16px}
 .item-time{font-size:13px;color:#6b7280}
-.item-stats{margin-top:8px;font-size:14px}
+.item-stats{
+  margin-top:8px;
+  font-size:14px;
+
+  display:flex;
+  flex-wrap:nowrap;      /* ⛔ alt satıra düşmez */
+  align-items:center;
+  gap:14px;              /* aralık */
+  white-space:nowrap;    /* ⛔ kırılma yok */
+}
+
+.item-stats span{
+  font-weight:600;
+}
+
 .empty{
   background:#fff;border-radius:16px;padding:20px;text-align:center;
   color:#6b7280;box-shadow:0 6px 16px rgba(0,0,0,.05)
@@ -242,20 +256,12 @@ div.innerHTML = `
   </div>
 
   <div class="item-stats">
-    👥 Toplam:
-    <span class="stat-num total">${d.total}</span>
-
-    &nbsp;&nbsp;
-
-    ✅ Görevde:
-    <span class="stat-num ok">${d.ok}</span>
-
-    &nbsp;&nbsp;
-
-    ❌ Uygunsuz:
-    <span class="stat-num bad">${d.bad}</span>
+    <div>👥 Toplam: <span>${d.total}</span></div>
+    <div>✅ Görevde: <span>${d.ok}</span></div>
+    <div>❌ Uygunsuz: <span>${d.bad}</span></div>
   </div>
 `;
+
 
 list.appendChild(div);
 
