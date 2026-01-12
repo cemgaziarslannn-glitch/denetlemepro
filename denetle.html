@@ -3,7 +3,6 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Denetleme Sistemi</title>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
@@ -263,6 +262,15 @@ html, body {
  ">
   Yükleniyor...
  </span>
+<span id="offlineStatus" style="
+ display:none;
+ font-size:11px;
+ font-weight:800;
+ color:#ff4d4d;
+ text-shadow:0 0 10px rgba(255,0,0,.7);
+">
+ 📡 OFFLINE
+</span>
 
  <div style="
   width:36px;
@@ -676,17 +684,21 @@ function selectProject(){
   return;
  }
 
- proje=projectSelect.value;
+ proje = projectSelect.value;
+
+ // 🔒 OFFLINE CACHE — PROJE PERSONELİ
+ db.ref(`projects/${proje}/personnel`).once("value");
+
  projectPage.classList.add("hidden");
  listPage.classList.remove("hidden");
 
  db.ref(`projects/${proje}`).once("value",s=>{
-  projectTitle.innerText=s.val().projectName;
+  projectTitle.innerText = s.val().projectName;
  });
 
  loadList();
-  loadLastPatrolInfo();
-  }
+ loadLastPatrolInfo();
+}
 
 
 
@@ -706,6 +718,9 @@ function loadList(){
     snap.forEach(tcSnap => {
 
       const tc = tcSnap.key;
+	 // 🔒 OFFLINE CACHE — PERSONEL DETAY
+db.ref(`personnel/${tc}`).once("value");
+
 
       // 1️⃣ PERSONEL BİLGİSİ
       db.ref(`personnel/${tc}`).once("value", perSnap => {
@@ -971,7 +986,15 @@ if(durum === "gorevi_basinda"){
 }
 
 
-ref.set(data);
+if(navigator.onLine){
+ ref.set(data);
+}else{
+ const key = "offlineInspections";
+ const list = JSON.parse(localStorage.getItem(key) || "[]");
+ list.push({ proje, tcNo, data });
+ localStorage.setItem(key, JSON.stringify(list));
+}
+
 
  cardPage.classList.add("hidden");
  listPage.classList.remove("hidden");
@@ -1512,47 +1535,49 @@ function continueAsGuestGuard(){
     showCard();
   });
 }
+
 function loadGuardFromPersonnel(){
 
-  db.ref(`personnel/${tcNo}`).once("value", perSnap => {
+ // 🔌 OFFLINE MODE
+ if(!navigator.onLine){
+  const cached = getCachedPersonnel(tcNo);
 
-    const adSoyad = perSnap.exists()
-      ? perSnap.val().adSoyad || "İsimsiz"
-      : "İsimsiz";
+  if(!cached){
+   showAlert({
+    title:"Offline Veri Yok",
+    message:"Bu personelin bilgisi offline cache’te yok",
+    buttons:[{text:"Tamam"}]
+   });
+   return;
+  }
 
-    guard = {
-      tc: tcNo,
-      adSoyad,
-      ...(perSnap.exists() ? perSnap.val() : {})
-    };
+  guard = { tc: tcNo, ...cached };
 
-    if(!guard.telefon || !guard.kimlikTuru || !guard.kimlikGecerlilik){
-      qrPage.classList.add("hidden");
-      requiredPage.classList.remove("hidden");
-      return;
-    }
+  qrPage.classList.add("hidden");
+  showCard();
+  return;
+ }
 
-    db.ref(`denetimler/${proje}/${tcNo}`)
-      .orderByChild("devriyeId")
-      .equalTo(aktifDevriyeId)
-      .limitToLast(1)
-      .once("value", d => {
+ // 🌐 ONLINE MODE
+ db.ref(`personnel/${tcNo}`).once("value", perSnap => {
 
-        qrPage.classList.add("hidden");
+  if(!perSnap.exists()){
+   showAlert({
+    title:"Personel Yok",
+    message:"Personel bulunamadı",
+    buttons:[{text:"Tamam"}]
+   });
+   return;
+  }
 
-        if(d.exists()){
-          d.forEach(x=>{
-            mevcutDenetimId = x.key;
-            oldInfo.innerHTML =
-              `${new Date(x.val().tarih).toLocaleString("tr-TR")}<br>${x.val().durum}`;
-          });
-          alreadyPage.classList.remove("hidden");
-        }else{
-          showCard();
-        }
-      });
+  guard = { tc: tcNo, ...perSnap.val() };
 
-  });
+  // 🔥 CACHE’E YAZ
+  cachePersonnel(tcNo, perSnap.val());
+
+  qrPage.classList.add("hidden");
+  showCard();
+ });
 }
 function moveGuardToThisProject(oldProjectId){
 
@@ -1625,6 +1650,35 @@ function confirmMoveGuard(found){
   });
 }
 
+/* 🔁 OFFLINE DENETİM SENKRON */
+window.addEventListener("online", ()=>{
+
+ const key = "offlineInspections";
+ const list = JSON.parse(localStorage.getItem(key) || "[]");
+ if(!list.length) return;
+
+ list.forEach(x=>{
+  db.ref(`denetimler/${x.proje}/${x.tcNo}`).push(x.data);
+ });
+
+ localStorage.removeItem(key);
+
+ showAlert({
+  title:"Senkron Tamam",
+  message:"Offline denetimler sisteme yüklendi",
+  buttons:[{text:"Tamam"}]
+ });
+});
+function cachePersonnel(tc, data){
+ const all = JSON.parse(localStorage.getItem("personnelCache") || "{}");
+ all[tc] = data;
+ localStorage.setItem("personnelCache", JSON.stringify(all));
+}
+
+function getCachedPersonnel(tc){
+ const all = JSON.parse(localStorage.getItem("personnelCache") || "{}");
+ return all[tc] || null;
+}
 
 </script>
 <div id="appAlert" class="hidden">
@@ -1707,6 +1761,22 @@ function confirmMoveGuard(found){
  </div>
 </div>
 <script>
+/* 📡 OFFLINE DURUM TAKİBİ (ÜST BAR) */
+function updateOfflineStatus(){
+ const el = document.getElementById("offlineStatus");
+ if(!el) return;
+
+ if(navigator.onLine){
+  el.style.display = "none";
+ }else{
+  el.style.display = "block";
+ }
+}
+
+window.addEventListener("online", updateOfflineStatus);
+window.addEventListener("offline", updateOfflineStatus);
+updateOfflineStatus();
+
 let startY = 0;
 
 window.addEventListener("touchstart", e => {
