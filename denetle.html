@@ -269,7 +269,7 @@ html, body {
  color:#ff4d4d;
  text-shadow:0 0 10px rgba(255,0,0,.7);
 ">
- 📡 OFFLINE MOD AKTİF
+ 📡 GÜVENLİ OFFLINE MOD AKTİF
 </span>
 
  <div style="
@@ -745,7 +745,7 @@ Promise.all(promises).then(()=>{
 
 function loadList(){
   guardList.innerHTML = "";
-
+const rendered = new Set();
   db.ref(`projects/${proje}/personnel`).once("value", snap => {
 
     if(!snap.exists()){
@@ -1699,31 +1699,38 @@ function confirmMoveGuard(found){
 
 window.addEventListener("online", async ()=>{
 
- const key = "offlineInspections";
- const list = JSON.parse(localStorage.getItem(key) || "[]");
- if(!list.length) return;
+  const key = "offlineInspections";
+  const list = JSON.parse(localStorage.getItem(key) || "[]");
+  if(!list.length) return;
 
- try{
-  for(const x of list){
-   await db.ref(`denetimler/${x.proje}/${x.tcNo}`).push(x.data);
+  try{
+    for(const x of list){
+      await db.ref(`denetimler/${x.proje}/${x.tcNo}`).push(x.data);
+    }
+
+    localStorage.removeItem(key);
+
+    // 🔥 ÇÖZÜM BURASI
+    if(listPage && !listPage.classList.contains("hidden")){
+      guardList.innerHTML = "";   // NET SIFIRLAMA
+      setTimeout(loadList, 300);  // Firebase yazımı bitsin
+    }
+
+    showAlert({
+      title:"Senkron Tamam",
+      message:"Offline denetimler sisteme yüklendi",
+      buttons:[{text:"Tamam"}]
+    });
+
+  }catch(e){
+    showAlert({
+      title:"Senkron Hatası",
+      message:"Bazı offline veriler yüklenemedi",
+      buttons:[{text:"Tamam"}]
+    });
   }
-
-  localStorage.removeItem(key);
-
-  showAlert({
-   title:"Senkron Tamam",
-   message:"Offline denetimler sisteme yüklendi",
-   buttons:[{text:"Tamam"}]
-  });
-
- }catch(e){
-  showAlert({
-   title:"Senkron Hatası",
-   message:"Bazı offline veriler yüklenemedi",
-   buttons:[{text:"Tamam"}]
-  });
- }
 });
+
 
 function cachePersonnel(tc, data){
  const all = JSON.parse(localStorage.getItem("personnelCache") || "{}");
