@@ -22,8 +22,6 @@ html,body{
   margin:0;
   min-height:100%;
   overscroll-behavior:none;
-  touch-action:manipulation;
-  -webkit-text-size-adjust:100%;
 }
 
 body{
@@ -136,7 +134,7 @@ body{
   to{background-position:200% 0%}
 }
 
-/* FOOTER – SAĞ ALT */
+/* FOOTER */
 .footer{
   position:fixed;
   right:12px;
@@ -165,7 +163,7 @@ body{
   <!-- MENU -->
   <div class="cards">
 
-    <!-- DENETLEME -->
+    <!-- DENETLE -->
     <a href="denetle.html" class="card primary"
        onclick="sessionStorage.setItem('menuAllowed','ok')">
 
@@ -177,7 +175,6 @@ body{
         </svg>
         <h3>Denetleme Yap</h3>
       </div>
-
       <p>Personelin görev ve nöbet sürecini anlık denetle</p>
     </a>
 
@@ -193,11 +190,10 @@ body{
         </svg>
         <h3>Personel Ara</h3>
       </div>
-
       <p>Personel bilgilerini hızlıca görüntüle</p>
     </a>
 
-    <!-- GEÇMİŞ -->
+    <!-- DENETİM GEÇMİŞİ -->
     <a href="bugun.html" class="card"
        onclick="sessionStorage.setItem('menuAllowed','ok')">
 
@@ -211,7 +207,6 @@ body{
         </svg>
         <h3>Denetim Geçmişi</h3>
       </div>
-
       <p>Yapılan denetimleri detaylı incele</p>
     </a>
 
