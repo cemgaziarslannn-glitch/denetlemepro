@@ -3,81 +3,163 @@
 <head>
 <meta charset="UTF-8">
 <title>Denetleme Sistemi | Giriş</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
 <style>
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+  margin:0;
+  height:100%;
+  overscroll-behavior:none;
+}
+
 body{
- margin:0;height:100vh;display:flex;align-items:center;justify-content:center;
- background:radial-gradient(circle at top,#1e3a8a,#020617);
- font-family:Segoe UI;color:#fff;
+  font-family:'Inter',sans-serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:18px;
+  background:
+    radial-gradient(circle at top,#1e3a8a,#020617);
+  color:#fff;
 }
+
+/* CARD */
 .card{
- width:380px;padding:38px;border-radius:30px;
- background:rgba(15,23,42,.65);backdrop-filter:blur(20px);
- box-shadow:0 40px 120px rgba(0,0,0,.8);
+  width:100%;
+  max-width:380px;
+  padding:28px 26px 30px;
+  border-radius:26px;
+  background:rgba(15,23,42,.65);
+  backdrop-filter:blur(18px);
+  box-shadow:0 30px 80px rgba(0,0,0,.8);
 }
-h2{text-align:center;color:#38bdf8}
+
+/* TITLE */
+h2{
+  margin:0 0 18px;
+  text-align:center;
+  font-size:24px;
+  font-weight:800;
+  color:#38bdf8;
+}
+
+/* INPUT */
 input{
- width:100%;padding:15px;margin-top:14px;border-radius:16px;
- background:#020617;border:1px solid #334155;color:#fff;
+  width:100%;
+  padding:15px 16px;
+  margin-top:14px;
+  border-radius:16px;
+  background:#020617;
+  border:1px solid #334155;
+  color:#fff;
+  font-size:15px;
 }
+
+input::placeholder{
+  color:#94a3b8;
+}
+
+/* BUTTON */
 button{
- width:100%;margin-top:22px;padding:16px;border:none;border-radius:20px;
- background:linear-gradient(135deg,#38bdf8,#6366f1);
- font-weight:900;cursor:pointer;
+  width:100%;
+  margin-top:22px;
+  padding:16px;
+  border:none;
+  border-radius:18px;
+  background:linear-gradient(135deg,#38bdf8,#6366f1);
+  font-weight:800;
+  font-size:16px;
+  color:#020617;
+  cursor:pointer;
 }
+
+/* LINKS */
 .bottom-actions{
- display:flex;
- justify-content:space-between;
- margin-top:18px;
- font-size:13px;
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:18px;
+  font-size:13px;
+  flex-wrap:wrap;
 }
+
 .bottom-actions a{
- color:#38bdf8;
- text-decoration:none;
- font-weight:600;
+  color:#38bdf8;
+  text-decoration:none;
+  font-weight:600;
 }
-.message{margin-top:20px;text-align:center;font-weight:700}
+
+/* MESSAGE */
+.message{
+  margin-top:18px;
+  text-align:center;
+  font-weight:700;
+  font-size:14px;
+}
 .message.error{color:#ff6b6b}
 .message.success{color:#22c55e}
+
+/* FOOTER */
+.footer{
+  position:fixed;
+  right:12px;
+  bottom:12px;
+  font-size:11px;
+  color:#94a3b8;
+  opacity:.7;
+  pointer-events:none;
+}
 </style>
 </head>
 
 <body>
 
 <div class="card">
- <h2>🔐 Güvenli Giriş</h2>
+  <h2>🔐 Güvenli Giriş</h2>
 
- <input id="email" placeholder="E-posta">
- <input id="password" type="password" placeholder="Şifre">
+  <input id="email" type="email" placeholder="E-posta">
+  <input id="password" type="password" placeholder="Şifre">
 
- <button onclick="login()">Giriş Yap</button>
+  <button onclick="login()">Giriş Yap</button>
 
- <!-- ✅ EKLENEN BUTONLAR -->
- <div class="bottom-actions">
-  <a href="kayit.html">➕ Denetici Hesabı Oluştur</a>
-  <a href="#" onclick="resetPassword()">Şifremi Unuttum</a>
- </div>
+  <div class="bottom-actions">
+    <a href="kayit.html">➕ Denetçi Hesabı Oluştur</a>
+    <a href="#" onclick="resetPassword()">Şifremi Unuttum</a>
+  </div>
 
- <div id="msg" class="message"></div>
+  <div id="msg" class="message"></div>
 </div>
+
+<div class="footer">© CGA Güvenlik Sistemi</div>
 
 <script>
 firebase.initializeApp({
- apiKey: "AIzaSyCye0QlekBFonTxfeBIlhLc9ia-mleyfUM",
- authDomain: "denetleme-4d3d9.firebaseapp.com",
- databaseURL: "https://denetleme-4d3d9-default-rtdb.firebaseio.com",
- projectId: "denetleme-4d3d9",
- storageBucket: "denetleme-4d3d9.appspot.com",
- messagingSenderId: "584625735764",
- appId: "1:584625735764:web:5889dcaadb69c4c78f45c1"
+  apiKey: "AIzaSyCye0QlekBFonTxfeBIlhLc9ia-mleyfUM",
+  authDomain: "denetleme-4d3d9.firebaseapp.com",
+  databaseURL: "https://denetleme-4d3d9-default-rtdb.firebaseio.com",
+  projectId: "denetleme-4d3d9",
+  storageBucket: "denetleme-4d3d9.appspot.com",
+  messagingSenderId: "584625735764",
+  appId: "1:584625735764:web:5889dcaadb69c4c78f45c1"
 });
 
-/* 🔐 OTURUMU KALICI YAP */
+/* OTURUM KALICI */
 firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
 const emailInput = document.getElementById("email");
@@ -85,69 +167,69 @@ const passwordInput = document.getElementById("password");
 const msg = document.getElementById("msg");
 
 function show(text,type="error"){
- msg.textContent=text;
- msg.className="message "+type;
+  msg.textContent=text;
+  msg.className="message "+type;
 }
 
-/* ✅ SAYFA AÇILINCA */
+/* SAYFA AÇILINCA */
 firebase.auth().onAuthStateChanged(user=>{
- if(user){
-  emailInput.value = user.email;
- }
+  if(user){
+    emailInput.value = user.email;
+  }
 });
 
-/* 🔐 LOGIN */
+/* LOGIN */
 function login(){
- const mail=emailInput.value.trim();
- const pass=passwordInput.value;
+  const mail=emailInput.value.trim();
+  const pass=passwordInput.value;
 
- if(!mail||!pass){
-  show("E-posta ve şifre giriniz");
-  return;
- }
-
- firebase.auth()
- .signInWithEmailAndPassword(mail,pass)
- .then(res=>{
-  return firebase.database().ref("users/"+res.user.uid).once("value");
- })
-.then(snap=>{
-  if(!snap.exists()||!snap.val().approved){
-   show("Admin onayı bekleniyor");
-   firebase.auth().signOut();
-   return;
+  if(!mail||!pass){
+    show("E-posta ve şifre giriniz");
+    return;
   }
 
-  // 🔐 DENETLE SAYFASINA GİRİŞ İZNİ VER
-  localStorage.setItem("canEnterApp", "yes");
+  firebase.auth()
+    .signInWithEmailAndPassword(mail,pass)
+    .then(res=>{
+      return firebase.database().ref("users/"+res.user.uid).once("value");
+    })
+    .then(snap=>{
+      if(!snap.exists()||!snap.val().approved){
+        show("Admin onayı bekleniyor");
+        firebase.auth().signOut();
+        return;
+      }
 
-  show("Giriş başarılı","success");
+      localStorage.setItem("canEnterApp","yes");
+      show("Giriş başarılı","success");
 
-  setTimeout(()=>{
-    window.location.replace("menü.html");
-  },800);
-})
-
- .catch(()=>{
-  show("E-posta veya şifre hatalı");
- });
+      setTimeout(()=>{
+        location.replace("menu.html");
+      },700);
+    })
+    .catch(()=>{
+      show("E-posta veya şifre hatalı");
+    });
 }
 
-/* 🔁 ŞİFRE SIFIRLAMA */
+/* ŞİFRE SIFIRLA */
 function resetPassword(){
- const mail=emailInput.value.trim();
- if(!mail){
-  show("E-posta giriniz");
-  return;
- }
+  const mail=emailInput.value.trim();
+  if(!mail){
+    show("E-posta giriniz");
+    return;
+  }
 
- firebase.auth().sendPasswordResetEmail(mail)
- .then(()=>{
-  show("Şifre sıfırlama bağlantısı E-posta adresinize gönderildi. Spam klasörünü kontrol ediniz.","success");
- })
- .catch(()=>{
-  show("Bu e-posta bulunamadı");
- });
+  firebase.auth().sendPasswordResetEmail(mail)
+    .then(()=>{
+      show(
+        "Şifre sıfırlama bağlantısı e-posta adresinize gönderildi.",
+        "success"
+      );
+    })
+    .catch(()=>{
+      show("Bu e-posta bulunamadı");
+    });
 }
 </script>
 
