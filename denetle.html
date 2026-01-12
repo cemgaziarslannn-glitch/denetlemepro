@@ -694,53 +694,62 @@ function selectProject(){
 
 
 function loadList(){
- guardList.innerHTML = "";
+  guardList.innerHTML = "";
 
- db.ref(`projects/${proje}`).once("value", snap => {
+  db.ref(`projects/${proje}/personnel`).once("value", snap => {
 
-  snap.forEach(g => {
+    if(!snap.exists()){
+      guardList.innerHTML = "<p>Bu projede personel yok</p>";
+      return;
+    }
 
-   const key = g.key;
-   const val = g.val();
+    snap.forEach(tcSnap => {
 
-   // ❗ TC değilse geç (projectName, lastPatrolEnd vs)
-   if(!/^[0-9]{11}$/.test(key)) return;
+      const tc = tcSnap.key;
 
-   const adSoyad = val.adSoyad || "İsimsiz";
+      // 1️⃣ PERSONEL BİLGİSİ
+      db.ref(`personnel/${tc}`).once("value", perSnap => {
 
-   // DEVRIYE YOKSA
-   if(!aktifDevriyeId){
-    guardList.innerHTML += `
-     <div class="list-item">
-      <span class="guard-name">👮 ${adSoyad}</span>
-      <div class="right-actions">
-       <button class="call-btn" onclick="callGuard('${key}')">📞 Ara</button>
-      </div>
-     </div>
-    `;
-    return;
-   }
+        const adSoyad = perSnap.exists()
+          ? perSnap.val().adSoyad || "İsimsiz"
+          : "İsimsiz";
 
-   // DEVRIYE VARSA
-   db.ref(`denetimler/${proje}/${key}`)
-    .orderByChild("devriyeId")
-    .equalTo(aktifDevriyeId)
-    .once("value", d => {
+        // 2️⃣ DEVRIYE YOKSA
+        if(!aktifDevriyeId){
+          guardList.innerHTML += `
+            <div class="list-item">
+              <span class="guard-name">👮 ${adSoyad}</span>
+              <div class="right-actions">
+                <button class="call-btn" onclick="callGuard('${tc}')">📞 Ara</button>
+              </div>
+            </div>
+          `;
+          return;
+        }
 
-     guardList.innerHTML += `
-      <div class="list-item">
-       <span class="guard-name">👮 ${adSoyad}</span>
-       <div class="right-actions">
-        ${d.exists() ? '<span class="badge">DENETLENDİ</span>' : ''}
-        <button class="call-btn" onclick="callGuard('${key}')">📞 Ara</button>
-       </div>
-      </div>
-     `;
+        // 3️⃣ DEVRIYE VAR → DENETLENDİ Mİ?
+        db.ref(`denetimler/${proje}/${tc}`)
+          .orderByChild("devriyeId")
+          .equalTo(aktifDevriyeId)
+          .limitToLast(1)
+          .once("value", dSnap => {
+
+            guardList.innerHTML += `
+              <div class="list-item">
+                <span class="guard-name">👮 ${adSoyad}</span>
+                <div class="right-actions">
+                  ${dSnap.exists() ? `<span class="badge">DENETLENDİ</span>` : ""}
+                  <button class="call-btn" onclick="callGuard('${tc}')">📞 Ara</button>
+                </div>
+              </div>
+            `;
+          });
+
+      });
     });
-
   });
- });
 }
+
 
 
 function timeAgo(ms){
@@ -777,8 +786,7 @@ qrInstance.stop();
 checkGuard();
  });
 }
-/* QR KONTROL */
-/* QR KONTROL – YENİ MİMARİ */
+
 function checkGuard(){
 
  if(tcNo.length !== 11){
@@ -790,60 +798,60 @@ function checkGuard(){
   return;
  }
 
- // 1️⃣ PROJEDE VAR MI? (SADECE TC + AD)
- db.ref(`projects/${proje}/${tcNo}`).once("value", pSnap => {
+ // 1️⃣ BU PROJEDE VAR MI?
+ db.ref(`projects/${proje}/personnel/${tcNo}`).once("value", pSnap => {
 
+  // ❌ BU PROJEDE YOKSA
   if(!pSnap.exists()){
-   showAlert({
-    title:"Personel Yok",
-    message:"Bu TC projede kayıtlı değil",
-    buttons:[{text:"Tamam"}]
-   });
-   return;
-  }
 
-  const adSoyad = pSnap.val().adSoyad || "İsimsiz";
+    findPersonnelProject(tcNo).then(found => {
 
-  // 2️⃣ PERSONNEL'DEN DETAY
-  db.ref(`personnel/${tcNo}`).once("value", perSnap => {
+      // ❌ HİÇBİR PROJEDE YOK
+      if(!found){
+        showAlert({
+          title:"Personel Bulunamadı",
+          message:"Bu TC hiçbir projede kayıtlı değil",
+          buttons:[{text:"Tamam"}]
+        });
+        return;
+      }
 
-   guard = {
-    tc: tcNo,
-    adSoyad,
-    ...(perSnap.exists() ? perSnap.val() : {})
-   };
+      // ⚠️ BAŞKA PROJEDE VAR
+showAlert({
+  title:"Bu Güvenlik Bu Projeye Ait Değil",
+  message:`
+    ❌ Bu personel bu projeye ait değil<br><br>
+    ✔️ <b>Mevcut Projesi:</b> ${found.name}
+  `,
+  buttons:[
+    {
+      text:"🟢 Mesaiye Geldi",
+      onClick: continueAsGuestGuard
+    },
 
-   // zorunlu alan kontrolü
-   if(!guard.telefon || !guard.kimlikTuru || !guard.kimlikGecerlilik){
-    qrPage.classList.add("hidden");
-    requiredPage.classList.remove("hidden");
-    return;
-   }
+    {
+      text:"🔁 Artık Bu Projede Çalışacak",
+      onClick: () => confirmMoveGuard(found)
+    },
 
-   // 3️⃣ AYNI DEVRİYEDE DENETLENMİŞ Mİ?
-   db.ref(`denetimler/${proje}/${tcNo}`)
-    .orderByChild("devriyeId")
-    .equalTo(aktifDevriyeId)
-    .limitToLast(1)
-    .once("value", d => {
+    {
+      text:"İptal"
+    }
+  ]
+});
 
-     qrPage.classList.add("hidden");
 
-     if(d.exists()){
-      d.forEach(x=>{
-       mevcutDenetimId = x.key;
-       oldInfo.innerHTML =
-        `${new Date(x.val().tarih).toLocaleString("tr-TR")}<br>${x.val().durum}`;
-      });
-      alreadyPage.classList.remove("hidden");
-     }else{
-      showCard();
-     }
     });
 
-  });
+    return;
+  }
+
+  // ✅ BU PROJEDE → NORMAL AKIŞ
+  loadGuardFromPersonnel();
+
  });
 }
+
 	
 /* ZORUNLU */
 function saveRequired(){
@@ -1033,7 +1041,7 @@ function finishPatrolConfirmed(){
  }).then(()=>{
 
   localStorage.clear();
-  window.location.href = "index.html";
+  window.location.href = "menü.html";
 
  }).catch(()=>{
   showAlert({
@@ -1456,6 +1464,165 @@ function logout(){
 
  // 5️⃣ Proje seçimindeyse → login'e dön
  window.location.href = "menü.html";
+}
+
+function findPersonnelProject(tc){
+  return db.ref("projects").once("value").then(snap => {
+
+    let found = null;
+
+    snap.forEach(p => {
+      if(p.child("personnel").child(tc).exists()){
+        found = {
+          id: p.key,
+          name: p.val().projectName
+        };
+      }
+    });
+
+    return found;
+  });
+}
+function continueAsGuestGuard(){
+
+  db.ref(`personnel/${tcNo}`).once("value", perSnap => {
+
+    if(!perSnap.exists()){
+      showAlert({
+        title:"Hata",
+        message:"Personel bilgisi bulunamadı",
+        buttons:[{text:"Tamam"}]
+      });
+      return;
+    }
+
+    guard = {
+      tc: tcNo,
+      ...perSnap.val()
+    };
+
+    // zorunlu alan kontrolü
+    if(!guard.telefon || !guard.kimlikTuru || !guard.kimlikGecerlilik){
+      qrPage.classList.add("hidden");
+      requiredPage.classList.remove("hidden");
+      return;
+    }
+
+    qrPage.classList.add("hidden");
+    showCard();
+  });
+}
+function loadGuardFromPersonnel(){
+
+  db.ref(`personnel/${tcNo}`).once("value", perSnap => {
+
+    const adSoyad = perSnap.exists()
+      ? perSnap.val().adSoyad || "İsimsiz"
+      : "İsimsiz";
+
+    guard = {
+      tc: tcNo,
+      adSoyad,
+      ...(perSnap.exists() ? perSnap.val() : {})
+    };
+
+    if(!guard.telefon || !guard.kimlikTuru || !guard.kimlikGecerlilik){
+      qrPage.classList.add("hidden");
+      requiredPage.classList.remove("hidden");
+      return;
+    }
+
+    db.ref(`denetimler/${proje}/${tcNo}`)
+      .orderByChild("devriyeId")
+      .equalTo(aktifDevriyeId)
+      .limitToLast(1)
+      .once("value", d => {
+
+        qrPage.classList.add("hidden");
+
+        if(d.exists()){
+          d.forEach(x=>{
+            mevcutDenetimId = x.key;
+            oldInfo.innerHTML =
+              `${new Date(x.val().tarih).toLocaleString("tr-TR")}<br>${x.val().durum}`;
+          });
+          alreadyPage.classList.remove("hidden");
+        }else{
+          showCard();
+        }
+      });
+
+  });
+}
+function moveGuardToThisProject(oldProjectId){
+
+  const updates = {};
+
+  // ❌ eski projeden çıkar
+  updates[`projects/${oldProjectId}/personnel/${tcNo}`] = null;
+
+  // ✅ yeni projeye ekle
+  updates[`projects/${proje}/personnel/${tcNo}`] = true;
+
+  // 🔁 personel ana kaydında proje bilgisini güncelle
+  updates[`personnel/${tcNo}/project`] = proje;
+
+  firebase.database().ref().update(updates)
+    .then(() => {
+
+      showAlert({
+        title:"Başarılı",
+        message:"Personel artık bu projede çalışıyor",
+        buttons:[
+          {
+            text:"Devam",
+            onClick: () => {
+              continueAsGuestGuard(); 
+              // 👆 aynı akış ama artık PROJEYE AİT
+            }
+          }
+        ]
+      });
+
+    })
+    .catch(() => {
+      showAlert({
+        title:"Hata",
+        message:"Personel taşınırken hata oluştu",
+        buttons:[{ text:"Tamam" }]
+      });
+    });
+}
+function confirmMoveGuard(found){
+
+  const deneticiAdi = currentProfileName?.trim() || "Denetici";
+  const eskiProje   = found.name || "mevcut proje";
+  const yeniProje   = projectTitle.innerText || "seçilen proje";
+
+  showAlert({
+    title:"Personel Taşıma Onayı",
+    message:`
+      <b>Sayın Denetici:</b> ${deneticiAdi}<br><br>
+
+      <span class="danger-text">${eskiProje}</span>
+      <span style="opacity:.7"> projesinde kayıtlı olan personelin</span><br>
+
+      <span style="font-size:18px;opacity:.5">↓</span><br>
+
+      <span style="color:#4dffb5;font-weight:800">${yeniProje}</span>
+      <span style="opacity:.7"> projesine</span><br><br>
+
+      <b>kalıcı olarak aktarılması</b> işlemini onaylıyor musunuz?
+    `,
+    buttons:[
+      { text:"❌ Vazgeç" },
+      {
+        text:"✅ Evet, Taşı",
+        danger:true,
+        onClick: () => moveGuardToThisProject(found.id)
+      }
+    ]
+  });
 }
 
 
