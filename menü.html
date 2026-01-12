@@ -5,86 +5,157 @@
 <title>Denetleme Paneli</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
 *{box-sizing:border-box}
-body{
+html,body{
   margin:0;
-  min-height:100vh;
+  height:100%;
+  overscroll-behavior:none;
+}
+
+body{
+  overflow:hidden;
   font-family:'Inter',sans-serif;
   background:
-    radial-gradient(circle at top left,#3b82f6,#0f172a 60%),
-    radial-gradient(circle at bottom right,#22c55e,#020617 60%);
+    radial-gradient(circle at 15% 10%,#3b82f6,#020617 60%),
+    radial-gradient(circle at 85% 90%,#22c55e,#020617 60%);
   display:flex;
   justify-content:center;
-  align-items:center;
   color:#fff;
 }
+
+/* APP */
 .app{
   width:100%;
   max-width:420px;
-  padding:22px;
+  height:100vh;
+  padding:24px;
+  display:flex;
+  flex-direction:column;
 }
+
+/* HEADER */
 .header{
-  margin-bottom:28px;
   display:flex;
   justify-content:space-between;
+  align-items:flex-start;
+  margin-bottom:26px;
+}
+
+.welcome .greet{
+  font-size:34px;
+  font-weight:800;
+  display:flex;
   align-items:center;
+  gap:10px;
 }
-.header h1{
-  margin:0;
-  font-size:28px;
-  font-weight:700;
-}
-.header p{
+
+.welcome .name{
   margin-top:6px;
-  font-size:14px;
+  font-size:17px;
+  font-weight:600;
   color:#c7d2fe;
 }
+
+/* LOGOUT */
 .logout{
-  background:linear-gradient(135deg,#ff4d4d,#b30000);
+  background:linear-gradient(135deg,#ff5f5f,#b30000);
   border:none;
   color:#fff;
-  padding:10px 14px;
+  padding:10px 16px;
   border-radius:14px;
   cursor:pointer;
   font-weight:600;
-  box-shadow:0 6px 18px rgba(255,0,0,.5);
-  transition:.25s ease;
 }
 
-.logout:hover{
-  transform:scale(1.05);
-  box-shadow:0 8px 22px rgba(255,0,0,.65);
-}
+/* CARDS */
 .cards{
   display:grid;
-  gap:18px;
+  gap:20px;
+  flex:1;
 }
+
 .card{
   position:relative;
   padding:22px;
   border-radius:22px;
-  background:rgba(255,255,255,0.12);
+  background:rgba(255,255,255,.12);
   backdrop-filter:blur(14px);
-  box-shadow:0 20px 40px rgba(0,0,0,.35);
-  text-decoration:none;
   color:#fff;
+  text-decoration:none;
+  box-shadow:0 20px 50px rgba(0,0,0,.4);
   transition:.25s ease;
 }
+
 .card:hover{
-  transform:translateY(-6px) scale(1.015);
-  background:rgba(255,255,255,0.18);
+  transform:translateY(-4px);
 }
-.card .icon{font-size:34px;margin-bottom:12px}
-.card h3{margin:0;font-size:18px;font-weight:600}
-.card p{margin-top:6px;font-size:14px;color:#e0e7ff}
+
+/* ICONS */
+.icon{
+  width:36px;
+  height:36px;
+  margin-bottom:14px;
+  color:#22c55e;
+  transition:.25s ease;
+}
+
+.card:hover .icon{
+  filter:drop-shadow(0 0 8px rgba(34,197,94,.9));
+  transform:scale(1.05);
+}
+
+.card.primary .icon{
+  color:#4ade80;
+}
+
+/* TEXT */
+.card h3{
+  margin:0;
+  font-size:18px;
+  font-weight:700;
+}
+
+.card p{
+  margin-top:6px;
+  font-size:14px;
+  color:#e0e7ff;
+}
+
+/* 🔥 DENETLEME – ÇİZGİ BOYUNCA DOLAŞAN IŞIK */
+.card.primary{
+  border:2px solid transparent;
+  background:
+    linear-gradient(#0f172a,#0f172a) padding-box,
+    linear-gradient(
+      90deg,
+      transparent,
+      #22c55e,
+      #60a5fa,
+      #22c55e,
+      transparent
+    ) border-box;
+  background-size:200% 100%;
+  animation:borderFlow 3s linear infinite;
+}
+
+@keyframes borderFlow{
+  from{background-position:0% 0%}
+  to{background-position:200% 0%}
+}
+
+/* FOOTER */
 .footer{
-  margin-top:30px;
+  position:fixed;
+  bottom:10px;
+  left:0;
+  right:0;
   text-align:center;
   font-size:12px;
   color:#c7d2fe;
+  pointer-events:none;
 }
 </style>
 </head>
@@ -93,69 +164,114 @@ body{
 
 <div class="app">
 
+  <!-- HEADER -->
   <div class="header">
-    <div>
-      <h1>Denetleme</h1>
-      <p>Hızlı işlem menüsü</p>
+    <div class="welcome">
+      <div class="greet" id="greeting">Yükleniyor…</div>
+      <div class="name" id="userName">Personel</div>
     </div>
-    <button class="logout" onclick="logout()">Çıkış</button>
+    <button class="logout" onclick="goIndex()">Çıkış</button>
   </div>
 
+  <!-- MENU -->
   <div class="cards">
 
-<a href="denetle.html" class="card"
-   onclick="sessionStorage.setItem('menuAllowed','ok')">
-  <div class="icon">🛡️</div>
-  <h3>Denetleme Yap</h3>
-  <p>Sahadaki personeli denetle</p>
-</a>
+    <!-- DENETLEME -->
+    <a href="denetle.html" class="card primary"
+       onclick="sessionStorage.setItem('menuAllowed','ok')">
 
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z"/>
+        <path d="M9 12l2 2 4-4"/>
+      </svg>
 
+      <h3>Denetleme Yap</h3>
+      <p>Personelin görev ve nöbet sürecini anlık denetle</p>
+    </a>
+
+    <!-- PERSONEL ARA -->
     <a href="personelara.html" class="card"
        onclick="sessionStorage.setItem('menuAllowed','ok')">
-      <div class="icon">👤</div>
+
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"/>
+        <path d="M21 21l-4.3-4.3"/>
+      </svg>
+
       <h3>Personel Ara</h3>
-      <p>Personel bilgilerini görüntüle</p>
+      <p>Personel bilgilerini hızlıca görüntüle</p>
     </a>
 
+    <!-- GEÇMİŞ -->
     <a href="bugun.html" class="card"
-       onclick="sessionStorage.setItem('menuAllowed','1')">
-      <div class="icon">📊</div>
+       onclick="sessionStorage.setItem('menuAllowed','ok')">
+
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 3v18h18"/>
+        <rect x="7" y="12" width="3" height="6"/>
+        <rect x="12" y="9" width="3" height="9"/>
+        <rect x="17" y="6" width="3" height="12"/>
+      </svg>
+
       <h3>Denetim Geçmişi</h3>
-      <p>Yapılan denetimleri incele</p>
+      <p>Yapılan denetimlerini detaylı incele</p>
     </a>
 
-  </div>
-
-  <div class="footer">
-    © CGA Güvenlik Sistemi
   </div>
 
 </div>
 
-<!-- 🔥 FIREBASE -->
+<div class="footer">© CGA Güvenlik Sistemi</div>
+
+<!-- FIREBASE -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
 firebase.initializeApp({
-  apiKey: "AIzaSyCye0QlekBFonTxfeBIlhLc9ia-mleyfUM",
-  authDomain: "denetleme-4d3d9.firebaseapp.com",
-  projectId: "denetleme-4d3d9"
+  apiKey:"AIzaSyCye0QlekBFonTxfeBIlhLc9ia-mleyfUM",
+  authDomain:"denetleme-4d3d9.firebaseapp.com",
+  databaseURL:"https://denetleme-4d3d9-default-rtdb.firebaseio.com",
+  projectId:"denetleme-4d3d9"
 });
 
-/* 🔐 AUTH KORUMA */
-firebase.auth().onAuthStateChanged(user=>{
+const auth = firebase.auth();
+const db   = firebase.database();
+
+const greetingEl = document.getElementById("greeting");
+const userNameEl = document.getElementById("userName");
+
+auth.onAuthStateChanged(user=>{
   if(!user){
-    window.location.replace("index.html");
+    location.replace("index.html");
+    return;
   }
+
+  db.ref("users/"+user.uid).once("value",snap=>{
+    userNameEl.innerText =
+      snap.val()?.fullName ||
+      user.displayName ||
+      user.email.split("@")[0];
+
+    greetingEl.innerHTML = getGreeting() + " <span>👋</span>";
+  });
 });
 
-/* 🚪 ÇIKIŞ */
-function logout(){
+function getGreeting(){
+  const h = new Date().getHours();
+  if(h >= 5 && h <= 11) return "Günaydın";
+  if(h >= 12 && h <= 16) return "Tünaydın";
+  if(h >= 17 && h <= 22) return "İyi Akşamlar";
+  return "İyi Geceler";
+}
+
+function goIndex(){
   sessionStorage.clear();
-  localStorage.clear();
-  window.location.replace("index.html");
+  location.replace("index.html");
 }
 </script>
 
