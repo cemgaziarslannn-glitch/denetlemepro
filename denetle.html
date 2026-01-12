@@ -269,7 +269,7 @@ html, body {
  color:#ff4d4d;
  text-shadow:0 0 10px rgba(255,0,0,.7);
 ">
- 📡 OFFLINE
+ 📡 OFFLINE MOD
 </span>
 
  <div style="
@@ -505,6 +505,15 @@ function syncPersonnel({ tc, adSoyad, data = {} }) {
 
 
 let proje="", aktifDevriyeId=null, tcNo="", guard={}, mevcutDenetimId=null, mode="new";
+
+/* 🔥 OFFLINE İÇİN: PERSONEL BU PROJEDE Mİ? */
+function isPersonnelInThisProject(tc){
+  const map = JSON.parse(
+    localStorage.getItem("projectPersonnel_" + proje) || "{}"
+  );
+  return !!map[tc];
+}
+
 let qrInstance = null;
 let flashOn = false;
 
@@ -686,8 +695,35 @@ function selectProject(){
 
  proje = projectSelect.value;
 
- // 🔒 OFFLINE CACHE — PROJE PERSONELİ
- db.ref(`projects/${proje}/personnel`).once("value");
+db.ref(`projects/${proje}/personnel`).once("value", snap => {
+
+  const map = {};
+
+  const promises = [];
+
+  snap.forEach(tcSnap => {
+    const tc = tcSnap.key;
+
+    promises.push(
+      db.ref(`personnel/${tc}`).once("value").then(perSnap => {
+        if(perSnap.exists()){
+          map[tc] = true;              // 👈 sadece varlık bilgisi
+          cachePersonnel(tc, perSnap.val());
+        }
+      })
+    );
+  });
+
+  Promise.all(promises).then(()=>{
+    // 🔥 ASIL EKSİK OLAN SATIR
+    localStorage.setItem(
+      "projectPersonnel_" + proje,
+      JSON.stringify(map)
+    );
+  });
+
+});
+
 
  projectPage.classList.add("hidden");
  listPage.classList.remove("hidden");
@@ -718,16 +754,13 @@ function loadList(){
     snap.forEach(tcSnap => {
 
       const tc = tcSnap.key;
-	 // 🔒 OFFLINE CACHE — PERSONEL DETAY
-db.ref(`personnel/${tc}`).once("value");
-
-
+	
       // 1️⃣ PERSONEL BİLGİSİ
-      db.ref(`personnel/${tc}`).once("value", perSnap => {
+   const cached = getCachedPersonnel(tc);
 
-        const adSoyad = perSnap.exists()
-          ? perSnap.val().adSoyad || "İsimsiz"
-          : "İsimsiz";
+const adSoyad = cached
+  ? cached.adSoyad || "İsimsiz"
+  : "İsimsiz";
 
         // 2️⃣ DEVRIYE YOKSA
         if(!aktifDevriyeId){
@@ -757,9 +790,7 @@ db.ref(`personnel/${tc}`).once("value");
                   <button class="call-btn" onclick="callGuard('${tc}')">📞 Ara</button>
                 </div>
               </div>
-            `;
-          });
-
+            `;    
       });
     });
   });
@@ -804,6 +835,32 @@ checkGuard();
 
 function checkGuard(){
 
+ // 🔌 OFFLINE MODE → HİÇ FIREBASE’E GİTME
+ if(!navigator.onLine){
+
+  if(tcNo.length !== 11){
+    showAlert({
+      title:"Geçersiz TC",
+      message:"TC hatalı",
+      buttons:[{text:"Tamam"}]
+    });
+    return;
+  }
+
+  if(!isPersonnelInThisProject(tcNo)){
+    showAlert({
+      title:"Offline Uyarı",
+      message:"Bu personel bu projeye ait değil (offline)",
+      buttons:[{text:"Tamam"}]
+    });
+    return;
+  }
+
+  loadGuardFromPersonnel();
+  return;
+ }
+
+
  if(tcNo.length !== 11){
   showAlert({
    title:"Geçersiz QR",
@@ -812,6 +869,7 @@ function checkGuard(){
   });
   return;
  }
+
 
  // 1️⃣ BU PROJEDE VAR MI?
  db.ref(`projects/${proje}/personnel/${tcNo}`).once("value", pSnap => {
@@ -1538,47 +1596,34 @@ function continueAsGuestGuard(){
 
 function loadGuardFromPersonnel(){
 
- // 🔌 OFFLINE MODE
- if(!navigator.onLine){
+  // 🔥 ÖNCE CACHE’TEN OKU
   const cached = getCachedPersonnel(tcNo);
 
   if(!cached){
-   showAlert({
-    title:"Offline Veri Yok",
-    message:"Bu personelin bilgisi offline cache’te yok",
-    buttons:[{text:"Tamam"}]
-   });
-   return;
+    showAlert({
+      title:"Offline Veri Yok",
+      message:"Bu personel offline verilerde bulunamadı",
+      buttons:[{text:"Tamam"}]
+    });
+    return;
   }
 
-  guard = { tc: tcNo, ...cached };
+  guard = {
+    tc: tcNo,
+    ...cached
+  };
+
+  // zorunlu alan kontrolü
+  if(!guard.telefon || !guard.kimlikTuru || !guard.kimlikGecerlilik){
+    qrPage.classList.add("hidden");
+    requiredPage.classList.remove("hidden");
+    return;
+  }
 
   qrPage.classList.add("hidden");
   showCard();
-  return;
- }
-
- // 🌐 ONLINE MODE
- db.ref(`personnel/${tcNo}`).once("value", perSnap => {
-
-  if(!perSnap.exists()){
-   showAlert({
-    title:"Personel Yok",
-    message:"Personel bulunamadı",
-    buttons:[{text:"Tamam"}]
-   });
-   return;
-  }
-
-  guard = { tc: tcNo, ...perSnap.val() };
-
-  // 🔥 CACHE’E YAZ
-  cachePersonnel(tcNo, perSnap.val());
-
-  qrPage.classList.add("hidden");
-  showCard();
- });
 }
+
 function moveGuardToThisProject(oldProjectId){
 
   const updates = {};
@@ -1650,25 +1695,34 @@ function confirmMoveGuard(found){
   });
 }
 
-/* 🔁 OFFLINE DENETİM SENKRON */
-window.addEventListener("online", ()=>{
+window.addEventListener("online", async ()=>{
 
  const key = "offlineInspections";
  const list = JSON.parse(localStorage.getItem(key) || "[]");
  if(!list.length) return;
 
- list.forEach(x=>{
-  db.ref(`denetimler/${x.proje}/${x.tcNo}`).push(x.data);
- });
+ try{
+  for(const x of list){
+   await db.ref(`denetimler/${x.proje}/${x.tcNo}`).push(x.data);
+  }
 
- localStorage.removeItem(key);
+  localStorage.removeItem(key);
 
- showAlert({
-  title:"Senkron Tamam",
-  message:"Offline denetimler sisteme yüklendi",
-  buttons:[{text:"Tamam"}]
- });
+  showAlert({
+   title:"Senkron Tamam",
+   message:"Offline denetimler sisteme yüklendi",
+   buttons:[{text:"Tamam"}]
+  });
+
+ }catch(e){
+  showAlert({
+   title:"Senkron Hatası",
+   message:"Bazı offline veriler yüklenemedi",
+   buttons:[{text:"Tamam"}]
+  });
+ }
 });
+
 function cachePersonnel(tc, data){
  const all = JSON.parse(localStorage.getItem("personnelCache") || "{}");
  all[tc] = data;
