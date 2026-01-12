@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Denetleme Sistemi | Giriş</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+body{
+ margin:0;height:100vh;display:flex;align-items:center;justify-content:center;
+ background:radial-gradient(circle at top,#1e3a8a,#020617);
+ font-family:Segoe UI;color:#fff;
+}
+.card{
+ width:380px;padding:38px;border-radius:30px;
+ background:rgba(15,23,42,.65);backdrop-filter:blur(20px);
+ box-shadow:0 40px 120px rgba(0,0,0,.8);
+}
+h2{text-align:center;color:#38bdf8}
+input{
+ width:100%;padding:15px;margin-top:14px;border-radius:16px;
+ background:#020617;border:1px solid #334155;color:#fff;
+}
+button{
+ width:100%;margin-top:22px;padding:16px;border:none;border-radius:20px;
+ background:linear-gradient(135deg,#38bdf8,#6366f1);
+ font-weight:900;cursor:pointer;
+}
+.bottom-actions{
+ display:flex;
+ justify-content:space-between;
+ margin-top:18px;
+ font-size:13px;
+}
+.bottom-actions a{
+ color:#38bdf8;
+ text-decoration:none;
+ font-weight:600;
+}
+.message{margin-top:20px;text-align:center;font-weight:700}
+.message.error{color:#ff6b6b}
+.message.success{color:#22c55e}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+ <h2>🔐 Güvenli Giriş</h2>
+
+ <input id="email" placeholder="E-posta">
+ <input id="password" type="password" placeholder="Şifre">
+
+ <button onclick="login()">Giriş Yap</button>
+
+ <!-- ✅ EKLENEN BUTONLAR -->
+ <div class="bottom-actions">
+  <a href="kayit.html">➕ Denetici Hesabı Oluştur</a>
+  <a href="#" onclick="resetPassword()">Şifremi Unuttum</a>
+ </div>
+
+ <div id="msg" class="message"></div>
+</div>
+
+<script>
+firebase.initializeApp({
+ apiKey: "AIzaSyCye0QlekBFonTxfeBIlhLc9ia-mleyfUM",
+ authDomain: "denetleme-4d3d9.firebaseapp.com",
+ databaseURL: "https://denetleme-4d3d9-default-rtdb.firebaseio.com",
+ projectId: "denetleme-4d3d9",
+ storageBucket: "denetleme-4d3d9.appspot.com",
+ messagingSenderId: "584625735764",
+ appId: "1:584625735764:web:5889dcaadb69c4c78f45c1"
+});
+
+/* 🔐 OTURUMU KALICI YAP */
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+const msg = document.getElementById("msg");
+
+function show(text,type="error"){
+ msg.textContent=text;
+ msg.className="message "+type;
+}
+
+/* ✅ SAYFA AÇILINCA */
+firebase.auth().onAuthStateChanged(user=>{
+ if(user){
+  emailInput.value = user.email;
+ }
+});
+
+/* 🔐 LOGIN */
+function login(){
+ const mail=emailInput.value.trim();
+ const pass=passwordInput.value;
+
+ if(!mail||!pass){
+  show("E-posta ve şifre giriniz");
+  return;
+ }
+
+ firebase.auth()
+ .signInWithEmailAndPassword(mail,pass)
+ .then(res=>{
+  return firebase.database().ref("users/"+res.user.uid).once("value");
+ })
+.then(snap=>{
+  if(!snap.exists()||!snap.val().approved){
+   show("Admin onayı bekleniyor");
+   firebase.auth().signOut();
+   return;
+  }
+
+  // 🔐 DENETLE SAYFASINA GİRİŞ İZNİ VER
+  localStorage.setItem("canEnterApp", "yes");
+
+  show("Giriş başarılı","success");
+
+  setTimeout(()=>{
+    window.location.replace("menü.html");
+  },800);
+})
+
+ .catch(()=>{
+  show("E-posta veya şifre hatalı");
+ });
+}
+
+/* 🔁 ŞİFRE SIFIRLAMA */
+function resetPassword(){
+ const mail=emailInput.value.trim();
+ if(!mail){
+  show("E-posta giriniz");
+  return;
+ }
+
+ firebase.auth().sendPasswordResetEmail(mail)
+ .then(()=>{
+  show("Şifre sıfırlama bağlantısı E-posta adresinize gönderildi. Spam klasörünü kontrol ediniz.","success");
+ })
+ .catch(()=>{
+  show("Bu e-posta bulunamadı");
+ });
+}
+</script>
+
+</body>
+</html>

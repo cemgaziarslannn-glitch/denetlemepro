@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Denetleme Paneli</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  min-height:100vh;
+  font-family:'Inter',sans-serif;
+  background:
+    radial-gradient(circle at top left,#3b82f6,#0f172a 60%),
+    radial-gradient(circle at bottom right,#22c55e,#020617 60%);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  color:#fff;
+}
+.app{
+  width:100%;
+  max-width:420px;
+  padding:22px;
+}
+.header{
+  margin-bottom:28px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.header h1{
+  margin:0;
+  font-size:28px;
+  font-weight:700;
+}
+.header p{
+  margin-top:6px;
+  font-size:14px;
+  color:#c7d2fe;
+}
+.logout{
+  background:linear-gradient(135deg,#ff4d4d,#b30000);
+  border:none;
+  color:#fff;
+  padding:10px 14px;
+  border-radius:14px;
+  cursor:pointer;
+  font-weight:600;
+  box-shadow:0 6px 18px rgba(255,0,0,.5);
+  transition:.25s ease;
+}
+
+.logout:hover{
+  transform:scale(1.05);
+  box-shadow:0 8px 22px rgba(255,0,0,.65);
+}
+.cards{
+  display:grid;
+  gap:18px;
+}
+.card{
+  position:relative;
+  padding:22px;
+  border-radius:22px;
+  background:rgba(255,255,255,0.12);
+  backdrop-filter:blur(14px);
+  box-shadow:0 20px 40px rgba(0,0,0,.35);
+  text-decoration:none;
+  color:#fff;
+  transition:.25s ease;
+}
+.card:hover{
+  transform:translateY(-6px) scale(1.015);
+  background:rgba(255,255,255,0.18);
+}
+.card .icon{font-size:34px;margin-bottom:12px}
+.card h3{margin:0;font-size:18px;font-weight:600}
+.card p{margin-top:6px;font-size:14px;color:#e0e7ff}
+.footer{
+  margin-top:30px;
+  text-align:center;
+  font-size:12px;
+  color:#c7d2fe;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <div class="header">
+    <div>
+      <h1>Denetleme</h1>
+      <p>Hızlı işlem menüsü</p>
+    </div>
+    <button class="logout" onclick="logout()">Çıkış</button>
+  </div>
+
+  <div class="cards">
+
+<a href="denetle.html" class="card"
+   onclick="sessionStorage.setItem('menuAllowed','ok')">
+  <div class="icon">🛡️</div>
+  <h3>Denetleme Yap</h3>
+  <p>Sahadaki personeli denetle</p>
+</a>
+
+
+    <a href="personelara.html" class="card"
+       onclick="sessionStorage.setItem('menuAllowed','ok')">
+      <div class="icon">👤</div>
+      <h3>Personel Ara</h3>
+      <p>Personel bilgilerini görüntüle</p>
+    </a>
+
+    <a href="bugun.html" class="card"
+       onclick="sessionStorage.setItem('menuAllowed','1')">
+      <div class="icon">📊</div>
+      <h3>Denetim Geçmişi</h3>
+      <p>Yapılan denetimleri incele</p>
+    </a>
+
+  </div>
+
+  <div class="footer">
+    © CGA Güvenlik Sistemi
+  </div>
+
+</div>
+
+<!-- 🔥 FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyCye0QlekBFonTxfeBIlhLc9ia-mleyfUM",
+  authDomain: "denetleme-4d3d9.firebaseapp.com",
+  projectId: "denetleme-4d3d9"
+});
+
+/* 🔐 AUTH KORUMA */
+firebase.auth().onAuthStateChanged(user=>{
+  if(!user){
+    window.location.replace("index.html");
+  }
+});
+
+/* 🚪 ÇIKIŞ */
+function logout(){
+  sessionStorage.clear();
+  localStorage.clear();
+  window.location.replace("index.html");
+}
+</script>
+
+</body>
+</html>
