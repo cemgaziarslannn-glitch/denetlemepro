@@ -117,11 +117,20 @@ html, body {
 
 <script>
 /* 🔐 MENÜ KONTROLÜ */
-if (sessionStorage.getItem("menuAllowed") !== "1") {
-  window.location.replace("index.html");
-} else {
-  sessionStorage.removeItem("menuAllowed");
-}
+
+const allowed = sessionStorage.getItem("menuAllowed");
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const allowed = sessionStorage.getItem("menuAllowed");
+  if (allowed !== "ok") {
+    window.location.replace("menü.html");
+  }
+});
+
+
+
+
 
 /* 🔥 FIREBASE */
 firebase.initializeApp({
@@ -140,11 +149,25 @@ const badEl=document.getElementById("bad");
 
 firebase.auth().onAuthStateChanged(user=>{
   if(!user) return window.location.replace("index.html");
-  currentUser=user;
-  document.getElementById("userInfo").innerText =
-    "Denetleyen: "+(user.displayName||user.email);
-  loadData();
+  currentUser = user;
+
+  firebase.database()
+    .ref("users/" + user.uid)
+    .once("value")
+    .then(snap => {
+      const name =
+        snap.val()?.fullName ||
+        snap.val()?.name ||
+        user.displayName ||
+        user.email.split("@")[0];
+
+      document.getElementById("userInfo").innerText =
+        "Denetleyen: " + name;
+
+      loadData();
+    });
 });
+
 
 function setFilter(type,btn){
   currentFilter=type;
@@ -209,17 +232,33 @@ function loadData(){
         const s=new Date(t[0]).toLocaleTimeString("tr-TR",{hour:'2-digit',minute:'2-digit'});
         const e=new Date(t[t.length-1]).toLocaleTimeString("tr-TR",{hour:'2-digit',minute:'2-digit'});
 
-        const div=document.createElement("div");
-        div.className="item "+(d.bad>0?"bad":"good");
-        div.innerHTML=`
-          <div class="item-header">
-            <div class="item-title">${name}</div>
-            <div class="item-time">${s} – ${e}</div>
-          </div>
-          <div class="item-stats">
-            👥 ${d.total} &nbsp; ✅ ${d.ok} &nbsp; ❌ ${d.bad}
-          </div>`;
-        list.appendChild(div);
+       const div = document.createElement("div");
+div.className = "item " + (d.bad > 0 ? "bad" : "good");
+
+div.innerHTML = `
+  <div class="item-header">
+    <div class="item-title">${name}</div>
+    <div class="item-time">${s} – ${e}</div>
+  </div>
+
+  <div class="item-stats">
+    👥 Toplam Denetlenen Personel:
+    <span class="stat-num total">${d.total}</span>
+
+    &nbsp;&nbsp;
+
+    ✅ Görevde Uygun Personel:
+    <span class="stat-num ok">${d.ok}</span>
+
+    &nbsp;&nbsp;
+
+    ❌ Uygunsuz Personel:
+    <span class="stat-num bad">${d.bad}</span>
+  </div>
+`;
+
+list.appendChild(div);
+
       });
     });
   });
@@ -245,6 +284,12 @@ window.addEventListener("touchmove", e => {
   }
 }, { passive: false });
 </script>
-
+<script>
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    sessionStorage.removeItem("menuAllowed");
+  }, 300); // mobil için KRİTİK
+});
+</script>
 </body>
 </html>
