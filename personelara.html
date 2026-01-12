@@ -219,36 +219,54 @@ db.ref("projects").once("value",snap=>{
 });
 
 /* 📌 SEÇİM */
-projectSelect.onchange=()=>{
- const pid=projectSelect.value;
- result.innerHTML="";
- if(!pid){result.innerHTML=`<div class="empty">Proje seç</div>`;return;}
+projectSelect.onchange = async () => {
 
- db.ref("projects/"+pid).once("value",snap=>{
-  let found=false;
-  snap.forEach(c=>{
-   if(c.key==="projectName"||c.key.startsWith("lastPatrol"))return;
-   found=true;
-   const tc=c.key;
-   const ad=c.val().adSoyad||"İsimsiz";
+  const pid = projectSelect.value;
+  result.innerHTML = "";
 
-   result.innerHTML+=`
-    <div class="card" onclick="loadDetail('${tc}',this)">
-     <div class="card-header">
-      <div class="info">
-       <h3>${ad}</h3>
-       <p>TC: ${tc}</p>
+  if (!pid) {
+    result.innerHTML = `<div class="empty">Proje seç</div>`;
+    return;
+  }
+
+  const snap = await db.ref("projects/" + pid + "/personnel").once("value");
+
+  if (!snap.exists()) {
+    result.innerHTML = `<div class="empty">Personel yok</div>`;
+    return;
+  }
+
+  let found = false;
+
+  for (const tc in snap.val()) {
+    found = true;
+
+    // 🔥 ASIL BİLGİYİ BURADAN ALIYORUZ
+    const pSnap = await db.ref("personnel/" + tc).once("value");
+    if (!pSnap.exists()) continue;
+
+    const p = pSnap.val();
+    const ad = p.adSoyad || "İsimsiz";
+
+    result.innerHTML += `
+      <div class="card" onclick="loadDetail('${tc}',this)">
+        <div class="card-header">
+          <div class="info">
+            <h3>${ad}</h3>
+            <p>TC: ${tc}</p>
+          </div>
+          <button class="call-btn" onclick="callPerson(event,'${tc}')">📞</button>
+        </div>
+        <div class="detail"></div>
       </div>
-      <button class="call-btn" onclick="callPerson(event,'${tc}')">📞</button>
-     </div>
-     <div class="detail"></div>
-    </div>`;
-  });
-  if(!found) result.innerHTML=`<div class="empty">Personel yok</div>`;
- });
+    `;
+  }
+
+  if (!found) {
+    result.innerHTML = `<div class="empty">Personel yok</div>`;
+  }
 };
 
-/* 📞 ARA */
 async function callPerson(e,tc){
  e.stopPropagation();
  const s=await db.ref("personnel/"+tc+"/telefon").once("value");
