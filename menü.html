@@ -3,37 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <title>Denetleme Paneli</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
-*{box-sizing:border-box}
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
 html,body{
   margin:0;
-  height:100%;
+  min-height:100%;
   overscroll-behavior:none;
+  touch-action:manipulation;
+  -webkit-text-size-adjust:100%;
 }
 
 body{
-  overflow:hidden;
   font-family:'Inter',sans-serif;
   background:
     radial-gradient(circle at 15% 10%,#3b82f6,#020617 60%),
     radial-gradient(circle at 85% 90%,#22c55e,#020617 60%);
-  display:flex;
-  justify-content:center;
   color:#fff;
 }
 
 /* APP */
 .app{
-  width:100%;
   max-width:420px;
-  height:100vh;
-  padding:24px;
-  display:flex;
-  flex-direction:column;
+  margin:0 auto;
+  padding:
+    calc(env(safe-area-inset-top) + 18px)
+    18px
+    calc(env(safe-area-inset-bottom) + 18px);
 }
 
 /* HEADER */
@@ -41,102 +49,84 @@ body{
   display:flex;
   justify-content:space-between;
   align-items:flex-start;
-  margin-bottom:26px;
+  margin-bottom:18px;
 }
 
-.welcome .greet{
-  font-size:34px;
+.greet{
+  font-size:30px;
   font-weight:800;
   display:flex;
-  align-items:center;
-  gap:10px;
+  gap:8px;
 }
 
-.welcome .name{
-  margin-top:6px;
-  font-size:17px;
-  font-weight:600;
+.name{
+  font-size:16px;
   color:#c7d2fe;
+  margin-top:4px;
 }
 
-/* LOGOUT */
 .logout{
-  background:linear-gradient(135deg,#ff5f5f,#b30000);
+  background:#ef4444;
   border:none;
   color:#fff;
-  padding:10px 16px;
+  padding:10px 14px;
   border-radius:14px;
-  cursor:pointer;
   font-weight:600;
 }
 
 /* CARDS */
 .cards{
   display:grid;
-  gap:20px;
-  flex:1;
+  gap:14px;
 }
 
+/* CARD */
 .card{
-  position:relative;
-  padding:22px;
-  border-radius:22px;
-  background:rgba(255,255,255,.12);
-  backdrop-filter:blur(14px);
-  color:#fff;
+  padding:16px 18px;
+  border-radius:20px;
+  background:linear-gradient(135deg,rgba(255,255,255,.12),rgba(255,255,255,.05));
+  backdrop-filter:blur(12px);
   text-decoration:none;
-  box-shadow:0 20px 50px rgba(0,0,0,.4);
-  transition:.25s ease;
+  color:#fff;
+  box-shadow:0 12px 30px rgba(0,0,0,.35);
 }
 
-.card:hover{
-  transform:translateY(-4px);
+/* CARD HEAD */
+.card-head{
+  display:flex;
+  align-items:center;
+  gap:12px;
 }
 
-/* ICONS */
 .icon{
-  width:36px;
-  height:36px;
-  margin-bottom:14px;
+  width:32px;
+  height:32px;
   color:#22c55e;
-  transition:.25s ease;
-}
-
-.card:hover .icon{
-  filter:drop-shadow(0 0 8px rgba(34,197,94,.9));
-  transform:scale(1.05);
 }
 
 .card.primary .icon{
   color:#4ade80;
 }
 
-/* TEXT */
 .card h3{
   margin:0;
-  font-size:18px;
+  font-size:17px;
   font-weight:700;
 }
 
 .card p{
-  margin-top:6px;
+  margin:8px 0 0;
   font-size:14px;
   color:#e0e7ff;
+  line-height:1.4;
 }
 
-/* 🔥 DENETLEME – ÇİZGİ BOYUNCA DOLAŞAN IŞIK */
+/* PRIMARY BORDER ANIMATION */
 .card.primary{
   border:2px solid transparent;
   background:
     linear-gradient(#0f172a,#0f172a) padding-box,
-    linear-gradient(
-      90deg,
-      transparent,
-      #22c55e,
-      #60a5fa,
-      #22c55e,
-      transparent
-    ) border-box;
+    linear-gradient(90deg,#22c55e,#60a5fa,#22c55e) border-box;
   background-size:200% 100%;
   animation:borderFlow 3s linear infinite;
 }
@@ -146,15 +136,14 @@ body{
   to{background-position:200% 0%}
 }
 
-/* FOOTER */
+/* FOOTER – SAĞ ALT */
 .footer{
   position:fixed;
-  bottom:10px;
-  left:0;
-  right:0;
-  text-align:center;
-  font-size:12px;
+  right:12px;
+  bottom:calc(env(safe-area-inset-bottom) + 10px);
+  font-size:11px;
   color:#c7d2fe;
+  opacity:.85;
   pointer-events:none;
 }
 </style>
@@ -166,7 +155,7 @@ body{
 
   <!-- HEADER -->
   <div class="header">
-    <div class="welcome">
+    <div>
       <div class="greet" id="greeting">Yükleniyor…</div>
       <div class="name" id="userName">Personel</div>
     </div>
@@ -180,13 +169,15 @@ body{
     <a href="denetle.html" class="card primary"
        onclick="sessionStorage.setItem('menuAllowed','ok')">
 
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z"/>
-        <path d="M9 12l2 2 4-4"/>
-      </svg>
+      <div class="card-head">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4z"/>
+          <path d="M9 12l2 2 4-4"/>
+        </svg>
+        <h3>Denetleme Yap</h3>
+      </div>
 
-      <h3>Denetleme Yap</h3>
       <p>Personelin görev ve nöbet sürecini anlık denetle</p>
     </a>
 
@@ -194,13 +185,15 @@ body{
     <a href="personelara.html" class="card"
        onclick="sessionStorage.setItem('menuAllowed','ok')">
 
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="11" cy="11" r="7"/>
-        <path d="M21 21l-4.3-4.3"/>
-      </svg>
+      <div class="card-head">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="7"/>
+          <path d="M21 21l-4.3-4.3"/>
+        </svg>
+        <h3>Personel Ara</h3>
+      </div>
 
-      <h3>Personel Ara</h3>
       <p>Personel bilgilerini hızlıca görüntüle</p>
     </a>
 
@@ -208,20 +201,21 @@ body{
     <a href="bugun.html" class="card"
        onclick="sessionStorage.setItem('menuAllowed','ok')">
 
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 3v18h18"/>
-        <rect x="7" y="12" width="3" height="6"/>
-        <rect x="12" y="9" width="3" height="9"/>
-        <rect x="17" y="6" width="3" height="12"/>
-      </svg>
+      <div class="card-head">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 3v18h18"/>
+          <rect x="7" y="12" width="3" height="6"/>
+          <rect x="12" y="9" width="3" height="9"/>
+          <rect x="17" y="6" width="3" height="12"/>
+        </svg>
+        <h3>Denetim Geçmişi</h3>
+      </div>
 
-      <h3>Denetim Geçmişi</h3>
-      <p>Yapılan denetimlerini detaylı incele</p>
+      <p>Yapılan denetimleri detaylı incele</p>
     </a>
 
   </div>
-
 </div>
 
 <div class="footer">© CGA Güvenlik Sistemi</div>
@@ -257,7 +251,7 @@ auth.onAuthStateChanged(user=>{
       user.displayName ||
       user.email.split("@")[0];
 
-    greetingEl.innerHTML = getGreeting() + " <span>👋</span>";
+    greetingEl.innerHTML = getGreeting() + " 👋";
   });
 });
 
