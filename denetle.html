@@ -269,7 +269,7 @@ html, body {
  color:#ff4d4d;
  text-shadow:0 0 10px rgba(255,0,0,.7);
 ">
- 📡 OFFLINE MOD
+ 📡 OFFLINE MOD AKTİF
 </span>
 
  <div style="
@@ -714,13 +714,16 @@ db.ref(`projects/${proje}/personnel`).once("value", snap => {
     );
   });
 
-  Promise.all(promises).then(()=>{
-    // 🔥 ASIL EKSİK OLAN SATIR
-    localStorage.setItem(
-      "projectPersonnel_" + proje,
-      JSON.stringify(map)
-    );
-  });
+Promise.all(promises).then(()=>{
+  localStorage.setItem(
+    "projectPersonnel_" + proje,
+    JSON.stringify(map)
+  );
+
+  // 🔥 ARTIK CACHE DOLU
+  loadList();
+});
+
 
 });
 
@@ -732,7 +735,6 @@ db.ref(`projects/${proje}/personnel`).once("value", snap => {
   projectTitle.innerText = s.val().projectName;
  });
 
- loadList();
  loadLastPatrolInfo();
 }
 
