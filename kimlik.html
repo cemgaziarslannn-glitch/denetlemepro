@@ -56,14 +56,17 @@ tr:hover{background:#020617}
 }
 
 .blink-red{
- color:#fecaca;font-weight:800;
- animation:blink 1s infinite
+ color:#ef4444;
+ font-weight:800;
+ animation:textBlink 1s infinite;
 }
-@keyframes blink{
- 0%{background:#7f1d1d}
- 50%{background:#ef4444}
- 100%{background:#7f1d1d}
+
+@keyframes textBlink{
+ 0%{opacity:1}
+ 50%{opacity:0.2}
+ 100%{opacity:1}
 }
+
 .btn-call{
  padding:6px 10px;
  border-radius:6px;
@@ -160,6 +163,37 @@ tr:hover{background:#020617}
   text-align:center;
  }
 }
+.page-title{
+ text-align:center;
+ margin-bottom:18px;
+}
+
+.page-title .main-title{
+ font-size:22px;
+ font-weight:800;
+ letter-spacing:.5px;
+}
+
+.page-title .sub-title{
+ font-size:14px;
+ opacity:.6;
+ margin-top:2px;
+}
+@media (max-width: 768px){
+ .top{
+  flex-direction:column;
+ }
+
+ #search{
+  width:100%;
+  font-size:15px;
+  padding:14px;
+ }
+
+ #filter{
+  width:100%;
+ }
+}
 
 </style>
 </head>
@@ -167,7 +201,11 @@ tr:hover{background:#020617}
 <body>
 <div class="container">
 
-<h1> Kimlik Süresi Görüntüleme Paneli</h1>
+<div class="page-title">
+ <div class="main-title">Kimlik Süresi</div>
+ <div class="sub-title">Görüntüleme Paneli</div>
+</div>
+
 
 
 <div class="top">
