@@ -253,7 +253,8 @@ projectSelect.onchange = async () => {
         <div class="card-header">
           <div class="info">
             <h3>${ad}</h3>
-            <p>TC: ${tc}</p>
+<p>TC: ${maskTc(tc)}</p>
+
           </div>
           <button class="call-btn" onclick="callPerson(event,'${tc}')">📞</button>
         </div>
@@ -311,6 +312,11 @@ window.addEventListener("touchmove", e => {
     e.preventDefault(); // 🔒 yenilemeyi engeller
   }
 }, { passive: false });
+function maskTc(tc){
+ if(!tc || tc.length < 4) return "********";
+ return tc.substring(0,2) + "******" + tc.slice(-2);
+}
+
 </script>
 
 </body>
