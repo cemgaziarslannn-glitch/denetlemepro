@@ -74,6 +74,93 @@ tr:hover{background:#020617}
  font-size:12px;
  margin-left:6px;
 }
+/* ===== MODAL ===== */
+.modal-backdrop{
+ position:fixed;
+ inset:0;
+ background:rgba(2,6,23,.75);
+ backdrop-filter:blur(6px);
+ display:none;
+ align-items:center;
+ justify-content:center;
+ z-index:999;
+}
+
+.modal{
+ background:linear-gradient(180deg,#020617,#020617cc);
+ border:1px solid #1f2937;
+ border-radius:18px;
+ width:420px;
+ max-width:92%;
+ padding:22px;
+ box-shadow:0 20px 60px rgba(0,0,0,.6);
+ animation:pop .25s ease-out;
+}
+
+@keyframes pop{
+ from{transform:scale(.9);opacity:0}
+ to{transform:scale(1);opacity:1}
+}
+
+.modal h3{
+ margin:0 0 4px;
+ font-size:20px;
+}
+
+.modal .kalan{
+ margin:10px 0 14px;
+ padding:10px;
+ border-radius:10px;
+ background:#020617;
+ border:1px solid #1f2937;
+ font-weight:700;
+ text-align:center;
+}
+
+.modal .grid{
+ display:grid;
+ grid-template-columns:1fr;
+ gap:8px;
+ font-size:14px;
+}
+
+.modal .grid span{
+ opacity:.6;
+}
+
+.modal .actions{
+ margin-top:16px;
+ display:flex;
+ gap:10px;
+}
+
+.modal .actions a{
+ flex:1;
+ text-align:center;
+}
+
+.modal .close{
+ margin-top:14px;
+ background:#1f2937;
+ color:#e5e7eb;
+ border:none;
+ width:100%;
+ padding:10px;
+ border-radius:10px;
+ cursor:pointer;
+}
+@media (max-width: 768px){
+ .stats{
+  flex-direction:row;
+  justify-content:space-between;
+ }
+
+ .stat{
+  flex:1;
+  text-align:center;
+ }
+}
+
 </style>
 </head>
 
@@ -103,14 +190,11 @@ tr:hover{background:#020617}
 <table>
 <thead>
 <tr>
-<th>Durum</th>
  <th>Ad Soyad</th>
  <th>Kalan Süre</th>
- <th>Proje</th>
- <th>Kimlik</th>
- <th>Bitiş</th>
- <th>Aksiyon</th>
+ <th>Detay</th>
 </tr>
+
 </thead>
 <tbody id="tbody"></tbody>
 </table>
@@ -213,27 +297,17 @@ yenileme işlemlerinizin ivedilikle başlatılması gerekmektedir.
 
 Bilgi ve yönlendirme için lütfen tarafımızla iletişime geçiniz.`;
 
-  tbody.innerHTML += `
+tbody.innerHTML += `
 <tr>
- <td><span class="badge b-${r.durum}">${r.badge}</span></td>
  <td>${r.ad}</td>
  <td class="${r.durum==="red"?"blink-red":""}">${r.kalan}</td>
- <td>${r.proje}</td>
- <td>${r.kimlik}</td>
- <td>${r.bitis}</td>
  <td>
- ${r.tel ? `
-  <a class="btn" target="_blank"
-   href="https://wa.me/90${r.tel.replace(/\D/g,"")}?text=${encodeURIComponent(msg)}">
-   WhatsApp</a>
+   <button class="btn" onclick='openDetail(${JSON.stringify(r)})'>
+     Detay
+   </button>
+ </td>
+</tr>`;
 
-  <a class="btn-call"
-   href="tel:+90${r.tel.replace(/\D/g,"")}">
-   Ara</a>
- ` : ""}
-</td>
-
-  </tr>`;
  });
 
  cRed.textContent = cr;
@@ -243,6 +317,62 @@ Bilgi ve yönlendirme için lütfen tarafımızla iletişime geçiniz.`;
 
 search.oninput = render;
 filter.onchange = render;
+function maskTc(tc){
+ return tc.substring(0,2) + "******" + tc.slice(-2);
+}
+
+function openDetail(r){
+ document.getElementById("mAd").textContent = r.ad;
+ document.getElementById("mTc").textContent = maskTc(r.tc);
+ document.getElementById("mProje").textContent = r.proje;
+ document.getElementById("mKimlik").textContent = r.kimlik;
+ document.getElementById("mBitis").textContent = r.bitis;
+
+ document.getElementById("mKalan").textContent =
+  `Kimliğin sona ermesine ${r.kalan} kaldı`;
+
+ const msg = `Sayın ${r.ad},
+
+Kimlik Bitiş Tarihi: ${r.bitis}
+Kalan Süre: ${r.kalan}
+
+Yenileme işlemlerinin başlatılması gerekmektedir.`;
+
+ document.getElementById("mWp").href =
+  `https://wa.me/90${r.tel}?text=${encodeURIComponent(msg)}`;
+
+ document.getElementById("mCall").href = `tel:+90${r.tel}`;
+
+ document.getElementById("modal").style.display = "flex";
+}
+
+function closeDetail(){
+ document.getElementById("modal").style.display = "none";
+}
+
 </script>
+<div id="modal" class="modal-backdrop">
+ <div class="modal">
+
+  <div id="mKalan" class="kalan"></div>
+
+  <div class="grid">
+   <div><span>Ad Soyad</span> — <b id="mAd"></b></div>
+   <div><span>TC</span> — <b id="mTc"></b></div>
+   <div><span>Proje</span> — <b id="mProje"></b></div>
+   <div><span>Kimlik Türü</span> — <b id="mKimlik"></b></div>
+   <div><span>Bitiş Tarihi</span> — <b id="mBitis"></b></div>
+  </div>
+
+  <div class="actions">
+   <a id="mWp" class="btn" target="_blank">WhatsApp</a>
+   <a id="mCall" class="btn-call">Ara</a>
+  </div>
+
+  <button class="close" onclick="closeDetail()">Kapat</button>
+
+ </div>
+</div>
+
 </body>
 </html>
