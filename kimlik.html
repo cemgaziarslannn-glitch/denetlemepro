@@ -194,6 +194,26 @@ tr:hover{background:#020617}
   width:100%;
  }
 }
+.mini-filter{
+ display:flex;
+ justify-content:center;
+ margin-bottom:12px;
+}
+
+.mini-filter select{
+ background:#020617;
+ border:1px solid #1f2937;
+ color:#e5e7eb;
+ font-size:13px;
+ padding:6px 12px;
+ border-radius:999px;
+ outline:none;
+ cursor:pointer;
+}
+
+.mini-filter select:hover{
+ border-color:#334155;
+}
 
 </style>
 </head>
@@ -205,14 +225,11 @@ tr:hover{background:#020617}
  <div class="main-title">Kimlik Süresi</div>
  <div class="sub-title">Görüntüleme Paneli</div>
 </div>
-
-
-
-<div class="top">
- <input id="search" placeholder="İsim / TC / Proje ara">
+<!-- 👇 TAM BURAYA -->
+<div class="mini-filter">
  <select id="filter">
   <option value="all">Tümü</option>
-  <option value="red">0–4 Ay (Kritik)</option>
+  <option value="red">0–4 Ay</option>
   <option value="orange">6–9 Ay</option>
   <option value="yellow">9–12 Ay</option>
  </select>
@@ -250,7 +267,6 @@ firebase.initializeApp({
 
 const db = firebase.database();
 const tbody = document.getElementById("tbody");
-const search = document.getElementById("search");
 const filter = document.getElementById("filter");
 
 let rows = [];
@@ -306,54 +322,75 @@ db.ref("projects").once("value").then(s=>{
  });
  render();
 });
-
 function render(){
- const q = search.value.toLowerCase();
  const f = filter.value;
  tbody.innerHTML = "";
- let cr=0, co=0, cy=0;
 
- rows.filter(r=>{
-  if(f !== "all" && r.durum !== f) return false;
-  return r.ad.toLowerCase().includes(q)
-   || r.tc.includes(q)
-   || r.proje.toLowerCase().includes(q);
- }).forEach(r=>{
-  if(r.durum==="red") cr++;
-  if(r.durum==="orange") co++;
-  if(r.durum==="yellow") cy++;
+ let cr = 0, co = 0, cy = 0;
 
- const msg = `Sayın ${r.ad},
+ rows
+  .filter(r => f === "all" || r.durum === f)
+  .forEach(r => {
 
-Kimlik Geçerlilik Tarihi: ${r.bitis}
+   if(r.durum === "red") cr++;
+   if(r.durum === "orange") co++;
+   if(r.durum === "yellow") cy++;
 
-Kimliğinizin sona ermesine ${r.kalan} kalmıştır.
-Kimlik yenileme süreci ortalama 4–6 ay sürmektedir.
-
-Herhangi bir mağduriyet yaşanmaması ve görev devamlılığının sağlanabilmesi adına,
-yenileme işlemlerinizin ivedilikle başlatılması gerekmektedir.
-
-Bilgi ve yönlendirme için lütfen tarafımızla iletişime geçiniz.`;
-
-tbody.innerHTML += `
-<tr>
- <td>${r.ad}</td>
- <td class="${r.durum==="red"?"blink-red":""}">${r.kalan}</td>
- <td>
-   <button class="btn" onclick='openDetail(${JSON.stringify(r)})'>
-     Detay
-   </button>
- </td>
-</tr>`;
-
- });
+   tbody.innerHTML += `
+    <tr>
+     <td>${r.ad}</td>
+     <td class="${r.durum === "red" ? "blink-red" : ""}">
+       ${r.kalan}
+     </td>
+     <td>
+      <button class="btn" onclick='openDetail(${JSON.stringify(r)})'>
+       Detay
+      </button>
+     </td>
+    </tr>
+   `;
+  });
 
  cRed.textContent = cr;
  cOrange.textContent = co;
  cYellow.textContent = cy;
 }
 
-search.oninput = render;
+
+function render(){
+ const f = filter.value;
+ tbody.innerHTML = "";
+
+ let cr = 0, co = 0, cy = 0;
+
+ rows
+  .filter(r => f === "all" || r.durum === f)
+  .forEach(r => {
+
+   if(r.durum === "red") cr++;
+   if(r.durum === "orange") co++;
+   if(r.durum === "yellow") cy++;
+
+   tbody.innerHTML += `
+    <tr>
+     <td>${r.ad}</td>
+     <td class="${r.durum === "red" ? "blink-red" : ""}">
+       ${r.kalan}
+     </td>
+     <td>
+      <button class="btn" onclick='openDetail(${JSON.stringify(r)})'>
+       Detay
+      </button>
+     </td>
+    </tr>
+   `;
+  });
+
+ cRed.textContent = cr;
+ cOrange.textContent = co;
+ cYellow.textContent = cy;
+}
+
 filter.onchange = render;
 function maskTc(tc){
  return tc.substring(0,2) + "******" + tc.slice(-2);
@@ -379,7 +416,7 @@ Yenileme işlemlerinin başlatılması gerekmektedir.`;
  document.getElementById("mWp").href =
   `https://wa.me/90${r.tel}?text=${encodeURIComponent(msg)}`;
 
- document.getElementById("mCall").href = `tel:+90${r.tel}`;
+document.getElementById("mCall").href = `tel:${r.tel}`;
 
  document.getElementById("modal").style.display = "flex";
 }
