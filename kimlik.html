@@ -103,13 +103,12 @@ tr:hover{background:#020617}
 <table>
 <thead>
 <tr>
- <th>Durum</th>
+<th>Durum</th>
  <th>Ad Soyad</th>
- <th>TC</th>
+ <th>Kalan Süre</th>
  <th>Proje</th>
  <th>Kimlik</th>
  <th>Bitiş</th>
- <th>Kalan Süre</th>
  <th>Aksiyon</th>
 </tr>
 </thead>
@@ -215,15 +214,14 @@ yenileme işlemlerinizin ivedilikle başlatılması gerekmektedir.
 Bilgi ve yönlendirme için lütfen tarafımızla iletişime geçiniz.`;
 
   tbody.innerHTML += `
-  <tr>
-   <td><span class="badge b-${r.durum}">${r.badge}</span></td>
-   <td>${r.ad}</td>
-   <td>${r.tc}</td>
-   <td>${r.proje}</td>
-   <td>${r.kimlik}</td>
-   <td>${r.bitis}</td>
-   <td class="${r.durum==="red"?"blink-red":""}">${r.kalan}</td>
-<td>
+<tr>
+ <td><span class="badge b-${r.durum}">${r.badge}</span></td>
+ <td>${r.ad}</td>
+ <td class="${r.durum==="red"?"blink-red":""}">${r.kalan}</td>
+ <td>${r.proje}</td>
+ <td>${r.kimlik}</td>
+ <td>${r.bitis}</td>
+ <td>
  ${r.tel ? `
   <a class="btn" target="_blank"
    href="https://wa.me/90${r.tel.replace(/\D/g,"")}?text=${encodeURIComponent(msg)}">
