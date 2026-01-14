@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>Kimlik Süresi Operasyon Paneli</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+body{
+ margin:0;
+ font-family:system-ui,Segoe UI;
+ background:#0b1220;
+ color:#e5e7eb;
+}
+.container{max-width:1400px;margin:auto;padding:20px}
+h1{margin-bottom:6px}
+.sub{opacity:.6;margin-bottom:16px}
+
+.top{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.top input,.top select{
+ padding:10px;border-radius:8px;border:none;font-size:14px
+}
+
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.stat{
+ background:#111827;padding:10px 14px;border-radius:10px;font-size:14px
+}
+
+.red{color:#ef4444}
+.orange{color:#fb923c}
+.yellow{color:#facc15}
+
+.table-wrap{overflow:auto;background:#020617;border-radius:14px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{
+ padding:10px 12px;border-bottom:1px solid #1f2937;
+ text-align:left;white-space:nowrap
+}
+th{background:#020617;position:sticky;top:0;z-index:2}
+tr:hover{background:#020617}
+
+.badge{
+ padding:4px 8px;border-radius:6px;font-weight:700;font-size:12px
+}
+.b-red{background:#7f1d1d;color:#fecaca}
+.b-orange{background:#7c2d12;color:#fed7aa}
+.b-yellow{background:#713f12;color:#fef08a}
+
+.btn{
+ padding:6px 10px;border-radius:6px;
+ background:#22c55e;color:#052e16;
+ font-weight:700;text-decoration:none;font-size:12px
+}
+
+.blink-red{
+ color:#fecaca;font-weight:800;
+ animation:blink 1s infinite
+}
+@keyframes blink{
+ 0%{background:#7f1d1d}
+ 50%{background:#ef4444}
+ 100%{background:#7f1d1d}
+}
+.btn-call{
+ padding:6px 10px;
+ border-radius:6px;
+ background:#38bdf8;
+ color:#082f49;
+ font-weight:700;
+ text-decoration:none;
+ font-size:12px;
+ margin-left:6px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1> Kimlik Süresi Görüntüleme Paneli</h1>
+
+
+<div class="top">
+ <input id="search" placeholder="İsim / TC / Proje ara">
+ <select id="filter">
+  <option value="all">Tümü</option>
+  <option value="red">0–4 Ay (Kritik)</option>
+  <option value="orange">6–9 Ay</option>
+  <option value="yellow">9–12 Ay</option>
+ </select>
+</div>
+
+<div class="stats">
+ <div class="stat red">🔴 Kritik: <b id="cRed">0</b></div>
+ <div class="stat orange">🟠 6–9 Ay: <b id="cOrange">0</b></div>
+ <div class="stat yellow">🟡 9–12 Ay: <b id="cYellow">0</b></div>
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+ <th>Durum</th>
+ <th>Ad Soyad</th>
+ <th>TC</th>
+ <th>Proje</th>
+ <th>Kimlik</th>
+ <th>Bitiş</th>
+ <th>Kalan Süre</th>
+ <th>Aksiyon</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+</div>
+
+</div>
+
+<script>
+firebase.initializeApp({
+ apiKey:"AIzaSyCye0QlekBFonTxfeBIlhLc9ia-mleyfUM",
+ authDomain:"denetleme-4d3d9.firebaseapp.com",
+ databaseURL:"https://denetleme-4d3d9-default-rtdb.firebaseio.com",
+ projectId:"denetleme-4d3d9"
+});
+
+const db = firebase.database();
+const tbody = document.getElementById("tbody");
+const search = document.getElementById("search");
+const filter = document.getElementById("filter");
+
+let rows = [];
+let projects = {};
+
+// PROJELERİ ÇEK
+db.ref("projects").once("value").then(s=>{
+ s.forEach(p=>{
+  projects[p.key] = p.val().projectName || p.key;
+ });
+ return db.ref("personnel").once("value");
+}).then(snap=>{
+ snap.forEach(p=>{
+  const x = p.val();
+  if(!x.kimlikGecerlilik) return;
+
+  const bitis = new Date(x.kimlikGecerlilik);
+  const gun = Math.ceil((bitis - new Date()) / 86400000);
+  if(gun <= 0 || gun > 365) return;
+
+  let durum="", badge="";
+
+  if(gun <= 120){ durum="red"; badge="🔴"; }
+  else if(gun > 180 && gun <= 270){ durum="orange"; badge="🟠"; }
+  else if(gun > 270 && gun <= 365){ durum="yellow"; badge="🟡"; }
+  else return;
+
+  let kalan = gun <= 90
+    ? `${gun} gün`
+    : `${Math.floor(gun/30)} ay ${gun%30} gün`;
+
+  // 🔥 PROJE MANTIĞI (SENİN İSTEDİĞİN GİBİ)
+  let projectId = "Tanımsız";
+
+  if (x.project && typeof x.project === "string") {
+    projectId = x.project;
+  } else if (x.projects && typeof x.projects === "object") {
+    const keys = Object.keys(x.projects);
+    if (keys.length > 0) projectId = keys[0];
+  }
+
+  rows.push({
+    durum,
+    badge,
+    ad: x.adSoyad || "",
+    tc: p.key,
+    proje: projects[projectId] || projectId,
+    kimlik: x.kimlikTuru || "",
+    bitis: bitis.toLocaleDateString("tr-TR"),
+    kalan,
+    tel: x.telefon || ""
+  });
+ });
+ render();
+});
+
+function render(){
+ const q = search.value.toLowerCase();
+ const f = filter.value;
+ tbody.innerHTML = "";
+ let cr=0, co=0, cy=0;
+
+ rows.filter(r=>{
+  if(f !== "all" && r.durum !== f) return false;
+  return r.ad.toLowerCase().includes(q)
+   || r.tc.includes(q)
+   || r.proje.toLowerCase().includes(q);
+ }).forEach(r=>{
+  if(r.durum==="red") cr++;
+  if(r.durum==="orange") co++;
+  if(r.durum==="yellow") cy++;
+
+ const msg = `Sayın ${r.ad},
+
+Kimlik Geçerlilik Tarihi: ${r.bitis}
+
+Kimliğinizin sona ermesine ${r.kalan} kalmıştır.
+Kimlik yenileme süreci ortalama 4–6 ay sürmektedir.
+
+Herhangi bir mağduriyet yaşanmaması ve görev devamlılığının sağlanabilmesi adına,
+yenileme işlemlerinizin ivedilikle başlatılması gerekmektedir.
+
+Bilgi ve yönlendirme için lütfen tarafımızla iletişime geçiniz.`;
+
+  tbody.innerHTML += `
+  <tr>
+   <td><span class="badge b-${r.durum}">${r.badge}</span></td>
+   <td>${r.ad}</td>
+   <td>${r.tc}</td>
+   <td>${r.proje}</td>
+   <td>${r.kimlik}</td>
+   <td>${r.bitis}</td>
+   <td class="${r.durum==="red"?"blink-red":""}">${r.kalan}</td>
+<td>
+ ${r.tel ? `
+  <a class="btn" target="_blank"
+   href="https://wa.me/90${r.tel.replace(/\D/g,"")}?text=${encodeURIComponent(msg)}">
+   WhatsApp</a>
+
+  <a class="btn-call"
+   href="tel:+90${r.tel.replace(/\D/g,"")}">
+   Ara</a>
+ ` : ""}
+</td>
+
+  </tr>`;
+ });
+
+ cRed.textContent = cr;
+ cOrange.textContent = co;
+ cYellow.textContent = cy;
+}
+
+search.oninput = render;
+filter.onchange = render;
+</script>
+</body>
+</html>
