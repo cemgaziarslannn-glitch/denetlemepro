@@ -214,11 +214,27 @@ tr:hover{background:#020617}
 .mini-filter select:hover{
  border-color:#334155;
 }
-
+/* ⎋ MENÜ BUTONU */
+.menu-exit-btn{
+ position:fixed;
+ top:12px;
+ right:12px;
+ z-index:9999;
+ padding:8px 12px;
+ border-radius:12px;
+ font-size:13px;
+ background:linear-gradient(135deg,#ff4d4d,#b30000);
+ color:#fff;
+ border:none;
+ box-shadow:0 6px 18px rgba(255,0,0,.5);
+ cursor:pointer;
+}
 </style>
 </head>
 
 <body>
+<button class="menu-exit-btn" onclick="goMenu()">⎋</button>
+
 <div class="container">
 
 <div class="page-title">
@@ -258,6 +274,11 @@ tr:hover{background:#020617}
 </div>
 
 <script>
+/* ⎋ MENÜ */
+function goMenu(){
+ sessionStorage.setItem("menuAllowed","ok");
+ window.location.href="menü.html";
+}
 /* 🔐 MENÜDEN GELDİ Mİ + REFRESH KORUMASI */
 const menuAllowed = sessionStorage.getItem("menuAllowed");
 const pageAuthorized = sessionStorage.getItem("pageAuthorized");
