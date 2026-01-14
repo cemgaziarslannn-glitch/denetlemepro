@@ -258,6 +258,21 @@ tr:hover{background:#020617}
 </div>
 
 <script>
+/* 🔐 MENÜDEN GELDİ Mİ + REFRESH KORUMASI */
+const menuAllowed = sessionStorage.getItem("menuAllowed");
+const pageAuthorized = sessionStorage.getItem("pageAuthorized");
+
+if (!pageAuthorized) {
+  // İlk kez giriliyor
+  if (menuAllowed === "ok") {
+    sessionStorage.setItem("pageAuthorized", "ok"); // yetkiyi kilitle
+    sessionStorage.removeItem("menuAllowed");       // menü iznini sil
+  } else {
+    // Direkt link
+    window.location.replace("index.html");
+  }
+}
+
 firebase.initializeApp({
  apiKey:"AIzaSyCye0QlekBFonTxfeBIlhLc9ia-mleyfUM",
  authDomain:"denetleme-4d3d9.firebaseapp.com",
@@ -322,40 +337,6 @@ db.ref("projects").once("value").then(s=>{
  });
  render();
 });
-function render(){
- const f = filter.value;
- tbody.innerHTML = "";
-
- let cr = 0, co = 0, cy = 0;
-
- rows
-  .filter(r => f === "all" || r.durum === f)
-  .forEach(r => {
-
-   if(r.durum === "red") cr++;
-   if(r.durum === "orange") co++;
-   if(r.durum === "yellow") cy++;
-
-   tbody.innerHTML += `
-    <tr>
-     <td>${r.ad}</td>
-     <td class="${r.durum === "red" ? "blink-red" : ""}">
-       ${r.kalan}
-     </td>
-     <td>
-      <button class="btn" onclick='openDetail(${JSON.stringify(r)})'>
-       Detay
-      </button>
-     </td>
-    </tr>
-   `;
-  });
-
- cRed.textContent = cr;
- cOrange.textContent = co;
- cYellow.textContent = cy;
-}
-
 
 function render(){
  const f = filter.value;
@@ -451,3 +432,4 @@ function closeDetail(){
 
 </body>
 </html>
+
