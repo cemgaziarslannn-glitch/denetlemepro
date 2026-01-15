@@ -381,10 +381,11 @@ html, body {
 
 <section id="alreadyPage" class="hidden">
 
-<h3>⚠️ Bu personel denetlendi</h3>
+<h3>⚠️ BU PERSONEL DENETLENDİ</h3>
 <p id="oldInfo"></p>
-<button onclick="mode='new';showCard()">➕ Yeni Denetim</button>
-<button onclick="mode='update';showCard()">🔄 Mevcut Denetimi Güncelle</button>
+<button onclick="continueNewInspection()">➕ Yeni Denetim</button>
+<button onclick="continueUpdateInspection()">🔄 Mevcut Denetimi Güncelle</button>
+
 </section>
 
 <section id="cardPage" class="hidden">
@@ -430,6 +431,8 @@ html, body {
 <div class="row"><span>Kimlik</span><span id="kimlik"></span></div>
 <div class="row"><span>Geçerlilik</span><span id="gecerlilik"></span></div>
 <div id="expiryInfo"></div>
+
+
 
 
 
@@ -760,9 +763,11 @@ const rendered = new Set();
       // 1️⃣ PERSONEL BİLGİSİ
    const cached = getCachedPersonnel(tc);
 
-const adSoyad = cached
-  ? cached.adSoyad || "İsimsiz"
-  : "İsimsiz";
+const adSoyad =
+  cached && cached.adSoyad
+    ? cached.adSoyad
+    : "Yükleniyor...";
+
 
         // 2️⃣ DEVRIYE YOKSA
         if(!aktifDevriyeId){
@@ -921,12 +926,52 @@ showAlert({
     return;
   }
 
-  // ✅ BU PROJEDE → NORMAL AKIŞ
-  loadGuardFromPersonnel();
+// 🔍 AYNI DEVRİYEDE DAHA ÖNCE DENETLENDİ Mİ?
+db.ref(`denetimler/${proje}/${tcNo}`)
+  .orderByChild("devriyeId")
+  .equalTo(aktifDevriyeId)
+  .limitToLast(1)
+  .once("value", snap => {
+
+    // ❗ DAHA ÖNCE DENETLENMİŞ → BİLGİ YÜKLEME
+    if(snap.exists()){
+      snap.forEach(s => {
+        mevcutDenetimId = s.key;
+        const d = s.val();
+        const tarih = new Date(d.tarih).toLocaleString("tr-TR");
+
+        oldInfo.innerHTML = `
+          🕒 <b>${tarih}</b><br>
+          Durum: <b>${d.durum}</b>
+        `;
+      });
+
+      qrPage.classList.add("hidden");
+      alreadyPage.classList.remove("hidden");
+      mode = "update";
+      return;
+    }
+
+    // ✅ İLK KEZ → PERSONEL BİLGİLERİNİ YÜKLE
+    mode = "new";
+    loadGuardFromPersonnel();
+  });
+
 
  });
 }
 
+function editKimlik(){
+
+ // mevcut personel bilgilerini inputlara bas
+ telefon.value = guard.telefon || "";
+ kimlikTuru.value = guard.kimlikTuru || "";
+ kimlikGecerlilik.value = guard.kimlikGecerlilik || "";
+
+ // kartı kapat, zorunlu bilgi sayfasını aç
+ cardPage.classList.add("hidden");
+ requiredPage.classList.remove("hidden");
+}
 	
 /* ZORUNLU */
 function saveRequired(){
@@ -954,6 +999,13 @@ function saveRequired(){
   guard.telefon = yeniTelefon;
   guard.kimlikTuru = yeniKimlikTuru;
   guard.kimlikGecerlilik = yeniGecerlilik;
+  cachePersonnel(tcNo, {
+ ...guard,
+ telefon: yeniTelefon,
+ kimlikTuru: yeniKimlikTuru,
+ kimlikGecerlilik: yeniGecerlilik
+});
+
 
   requiredPage.classList.add("hidden");
   showCard();
@@ -970,28 +1022,49 @@ function showCard(){
  kimlik.innerText = guard.kimlikTuru;
  gecerlilik.innerText = guard.kimlikGecerlilik;
 
- const expiry = checkKimlikExpiry(guard.kimlikGecerlilik);
+const expiry = checkKimlikExpiry(guard.kimlikGecerlilik);
 
- if(expiry.danger){
-  expiryInfo.innerHTML = `
-   <div class="expiry-warning">
-    🚨 ${expiry.text}
-   </div>
-  `;
- }else{
-  expiryInfo.innerHTML = `
-   <div style="
-    margin-top:12px;
-    padding:10px;
-    border-radius:12px;
-    background:linear-gradient(135deg,#1e2a55,#25346b);
-    box-shadow:0 0 12px rgba(0,229,255,.4);
-    font-size:13px;
+// ⛔ önce temizle
+expiryInfo.innerHTML = "";
+
+// 🚨 UYARI VARSA
+if(expiry.danger){
+
+ expiryInfo.innerHTML = `
+  <div class="expiry-warning">
+   🚨 ${expiry.text}
+  </div>
+
+  <button
+   onclick="editKimlik()"
+   style="
+    margin-top:10px;
+    background:linear-gradient(135deg,#ffb347,#ffcc33);
+    color:#000;
+    font-weight:800;
    ">
-    ${expiry.text}
-   </div>
-  `;
- }
+   🪪 Kimlik Bilgilerini Güncelle
+  </button>
+ `;
+}
+// ✅ UYARI YOKSA
+else{
+ expiryInfo.innerHTML = `
+  <div style="
+   margin-top:12px;
+   padding:10px;
+   border-radius:12px;
+   background:linear-gradient(135deg,#1e2a55,#25346b);
+   box-shadow:0 0 12px rgba(0,229,255,.4);
+   font-size:13px;
+  ">
+   ${expiry.text}
+  </div>
+ `;
+}
+
+
+
 
  if(guard.photoBase64){
   guardPhoto.src = guard.photoBase64;
@@ -1157,6 +1230,12 @@ function closeAlert(){
  appAlert.classList.add("hidden");
 }
 function checkKimlikExpiry(tarihStr){
+
+ if(!tarihStr){
+  return { danger:true, text:"❌ Kimlik bilgisi yok" };
+ }
+
+
  const today = new Date();
  const expiry = new Date(tarihStr);
 
@@ -1641,6 +1720,32 @@ function moveGuardToThisProject(oldProjectId){
 
   firebase.database().ref().update(updates)
     .then(() => {
+// 🔥 CACHE’E EKSİK VERİ YAZMA → FIREBASE’TEN TEKRAR OKU
+db.ref(`personnel/${tcNo}`).once("value", snap => {
+  if(snap.exists()){
+    cachePersonnel(tcNo, snap.val());
+
+    // liste açıksa anında yenile
+    if(listPage && !listPage.classList.contains("hidden")){
+      guardList.innerHTML = "";
+      setTimeout(loadList, 50);
+    }
+  }
+});
+
+// 🔁 LİSTEYİ YENİDEN ÇİZDİR (İSİM ANINDA GELİR)
+if(listPage && !listPage.classList.contains("hidden")){
+  guardList.innerHTML = "";
+  setTimeout(loadList, 100);
+}
+
+
+// 🔥 BU PROJENİN PERSONEL LİSTESİNE EKLE (OFFLINE + UI İÇİN)
+const key = "projectPersonnel_" + proje;
+const map = JSON.parse(localStorage.getItem(key) || "{}");
+map[tcNo] = true;
+localStorage.setItem(key, JSON.stringify(map));
+
 
       showAlert({
         title:"Başarılı",
@@ -1741,6 +1846,17 @@ function cachePersonnel(tc, data){
 function getCachedPersonnel(tc){
  const all = JSON.parse(localStorage.getItem("personnelCache") || "{}");
  return all[tc] || null;
+}
+function continueNewInspection(){
+  mode = "new";
+  alreadyPage.classList.add("hidden");
+  loadGuardFromPersonnel(); // 🔥 guard DOLAR
+}
+
+function continueUpdateInspection(){
+  mode = "update";
+  alreadyPage.classList.add("hidden");
+  loadGuardFromPersonnel(); // 🔥 guard DOLAR
 }
 
 </script>
@@ -1856,4 +1972,5 @@ window.addEventListener("touchmove", e => {
 
 </body>
 </html>  
+
 
