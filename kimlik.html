@@ -325,10 +325,22 @@ db.ref("projects").once("value").then(s=>{
 
   let durum="", badge="";
 
-  if(gun <= 120){ durum="red"; badge="🔴"; }
-  else if(gun > 180 && gun <= 270){ durum="orange"; badge="🟠"; }
-  else if(gun > 270 && gun <= 365){ durum="yellow"; badge="🟡"; }
-  else return;
+if (gun <= 120) {
+  durum = "red";
+  badge = "🔴";
+}
+else if (gun <= 270) {
+  durum = "orange";
+  badge = "🟠";
+}
+else if (gun <= 365) {
+  durum = "yellow";
+  badge = "🟡";
+}
+else {
+  return;
+}
+
 
   let kalan = gun <= 90
     ? `${gun} gün`
