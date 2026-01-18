@@ -359,6 +359,7 @@ else {
   rows.push({
     durum,
     badge,
+	gun,
     ad: x.adSoyad || "",
     tc: p.key,
     proje: projects[projectId] || projectId,
@@ -388,7 +389,7 @@ function render(){
    tbody.innerHTML += `
     <tr>
      <td>${r.ad}</td>
-     <td class="${r.durum === "red" ? "blink-red" : ""}">
+<td class="${r.gun <= 180 ? "blink-red" : ""}">
        ${r.kalan}
      </td>
      <td>
